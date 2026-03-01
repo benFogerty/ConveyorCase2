@@ -153,6 +153,42 @@ def simulated_annealing(
         T *= cooling
     return best_seq, best_ms, evals
 
+def greedy_makespan_insertion(
+    orders,
+    travel_aware=True,
+    tote_contents=None,
+    order_to_totes=None,
+    item_order_per_tote=None,
+):
+    """
+    Greedy Makespan Insertion (MCT):
+    Construct schedule by repeatedly choosing the order that minimizes makespan.
+    """
+    remaining = list(range(len(orders)))
+    sequence = []
+
+    while remaining:
+        best_order = None
+        best_ms = float("inf")
+
+        for o in remaining:
+            trial_seq = sequence + [o]
+            ms = makespan_for_sequence(
+                orders,
+                trial_seq,
+                travel_aware,
+                tote_contents=tote_contents,
+                order_to_totes=order_to_totes,
+                item_order_per_tote=item_order_per_tote,
+            )
+            if ms < best_ms:
+                best_ms = ms
+                best_order = o
+
+        sequence.append(best_order)
+        remaining.remove(best_order)
+
+    return sequence, best_ms
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -161,9 +197,9 @@ def main() -> None:
     parser.add_argument("generated_dir", type=Path, help="Path to folder with order_itemtypes.csv, order_quantities.csv")
     parser.add_argument(
         "--method",
-        choices=["hill", "sa"],
+        choices=["hill", "sa", "mct"],
         default="hill",
-        help="hill = first-improvement hill climbing; sa = simulated annealing",
+        help="hill = first-improvement hill climbing; sa = simulated annealing; mct = greedy makespan insertion",
     )
     parser.add_argument("--max-evals", type=int, default=500, help="Max sim evaluations for SA (default 500)")
     parser.add_argument("--seed", type=int, default=None, help="Random seed for SA")
@@ -205,10 +241,15 @@ def main() -> None:
     kw = {"tote_contents": tote_contents if use_tote else None, "order_to_totes": order_to_totes if use_tote else None}
     if args.method == "hill":
         best_seq, best_ms, evals = hill_climb(orders, lpt_seq, travel_aware=True, verbose=verbose, **kw)
-    else:
+    elif args.method == "sa":
         best_seq, best_ms, evals = simulated_annealing(
             orders, lpt_seq, travel_aware=True, max_evals=args.max_evals, verbose=verbose, **kw
         )
+    elif args.method == "mct":
+        best_seq, best_ms = greedy_makespan_insertion(
+            orders, travel_aware=True, **kw,
+        )
+        evals = "constructive"
 
     if verbose:
         print(f"Best makespan = {best_ms:.2f}s (evals = {evals})")

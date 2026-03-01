@@ -40,6 +40,10 @@ from scheduler.joint_solution import (
     orders_on_conveyor,
 )
 
+from scheduler.search_orders import (
+    greedy_makespan_insertion,
+)
+
 try:
     import matplotlib
     matplotlib.use("Agg")
@@ -51,6 +55,7 @@ except ImportError:
 METHODS = [
     "Baseline",
     "BaselineRR",
+    "GreedyMakespanInsertion",
     "OrderToteHill",
     "FullHillClimb",
     "SimulatedAnnealing",
@@ -196,6 +201,18 @@ def get_solution_for_method(
         sol = solution_from_order_sequence(orders, tote_contents, list(range(n)), travel_aware=False)
         val, _, _ = evaluate_solution(sol, orders, tote_contents, objective="last_order")
         return sol, val
+    if method == "GreedyMakespanInsertion":
+        # Order-only greedy construction
+        seq, ms = greedy_makespan_insertion(
+            orders,
+            travel_aware=True,
+            tote_contents=tote_contents,
+            order_to_totes=None,
+        )
+        sol = solution_from_order_sequence(
+            orders, tote_contents, seq, travel_aware=True
+        )
+        return sol, ms
     if method == "OrderToteHill":
         start = initial_solution(orders, tote_contents, travel_aware=True)
         sol, val, _ = hill_climb_order_and_tote(
@@ -283,6 +300,12 @@ def run_one_instance(
     )
     results["BaselineRR"], _, _ = evaluate_solution(baseline_rr_sol, orders, tote_contents, objective="last_order")
 
+    # MCT: greedy makespan insertion (order-only)
+    seq, mct_ms = greedy_makespan_insertion(
+        orders, travel_aware=True, tote_contents=tote_contents, order_to_totes=None,
+    )
+    results["GreedyMakespanInsertion"] = mct_ms
+
     # OrderToteHill: hill climb over order sequence and tote loading order only (no conveyor, no item order)
     order_tote_start = initial_solution(orders, tote_contents, travel_aware=True)
     _, results["OrderToteHill"], _ = hill_climb_order_and_tote(
@@ -355,7 +378,7 @@ def run_one_instance(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Compare Baseline, BaselineRR, OrderToteHill, FullHillClimb, SimulatedAnnealing, GeneticAlgorithm, TabuSearch, IteratedLocalSearch under last_order objective; write all outputs to results folder.",
+        description="Compare Baseline, BaselineRR, GreedyMakespanInsertion, OrderToteHill, FullHillClimb, SimulatedAnnealing, GeneticAlgorithm, TabuSearch, IteratedLocalSearch under last_order objective; write all outputs to results folder.",
     )
     parser.add_argument(
         "base_dir",
@@ -448,7 +471,7 @@ def main() -> None:
         print(f"  {col}: avg={avg:.2f}s  best={best:.2f}s")
     baseline_avg = sum(r["Baseline"] for r in rows) / N
     print(f"  BaselineRR vs Baseline: {(1 - sum(r['BaselineRR'] for r in rows) / N / baseline_avg) * 100:.1f}% (avg; positive = RR better)")
-    for name in ["OrderToteHill", "FullHillClimb", "SimulatedAnnealing", "GeneticAlgorithm", "TabuSearch", "IteratedLocalSearch"]:
+    for name in ["GreedyMakespanInsertion", "OrderToteHill", "FullHillClimb", "SimulatedAnnealing", "GeneticAlgorithm", "TabuSearch", "IteratedLocalSearch"]:
         avg = sum(r[name] for r in rows) / N
         print(f"  {name} vs Baseline: {(1 - avg / baseline_avg) * 100:.1f}% improvement (avg)")
 
@@ -476,7 +499,7 @@ def main() -> None:
             f.write(f"  {col}: avg={avg:.2f}s\n")
         f.write("\n")
         f.write(f"BaselineRR vs Baseline: {(1 - sum(r['BaselineRR'] for r in rows) / N / baseline_avg) * 100:.1f}% (avg; positive = RR better)\n")
-        for name in ["OrderToteHill", "FullHillClimb", "SimulatedAnnealing", "GeneticAlgorithm", "TabuSearch", "IteratedLocalSearch"]:
+        for name in ["GreedyMakespanInsertion", "OrderToteHill", "FullHillClimb", "SimulatedAnnealing", "GeneticAlgorithm", "TabuSearch", "IteratedLocalSearch"]:
             avg = sum(r[name] for r in rows) / N
             f.write(f"{name} vs Baseline: {(1 - avg / baseline_avg) * 100:.1f}% improvement (avg)\n")
         f.write("\nPer-instance results: see comparison.csv\n")
