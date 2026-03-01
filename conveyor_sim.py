@@ -6,7 +6,7 @@ import csv
 import heapq
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 SHAPE_COLUMNS = [
     "cirle",  # source template typo kept intentionally
@@ -21,6 +21,8 @@ SHAPE_COLUMNS = [
 NUM_CONVEYORS = 4
 HOP_SECONDS = 5.0
 FULL_LOOP_SECONDS = HOP_SECONDS * NUM_CONVEYORS
+# When all items load at conveyor 0: time between loading consecutive items ("half a conveyor belt" = half of one hop)
+LOAD_SPACING_SECONDS = 2.5
 
 @dataclass
 class ConveyorState:
@@ -59,27 +61,24 @@ def load_conveyors(input_csv: Path) -> Dict[int, ConveyorState]:
     return conveyors
 
 
-def simulate_greedy(conveyors: Dict[int, ConveyorState]) -> List[Tuple[int, int, float]]:
+def simulate_greedy(
+    conveyors: Dict[int, ConveyorState],
+    all_load_at_conveyor_0: bool = False,
+    load_spacing: float = LOAD_SPACING_SECONDS,
+    load_sequence: Optional[Sequence[int]] = None,
+    return_trace: bool = False,
+):
     if not conveyors:
-        return []
+        return ([] if not return_trace else ([], []))
 
+    trace_events: List[Tuple[float, str, Tuple]] = []  # (time, "LOAD"|"HOP"|"PICK", payload)
     demands: Dict[int, List[int]] = {
         conv_num: [0] * len(SHAPE_COLUMNS) for conv_num in conveyors
     }
-    items: List[Tuple[int, int, float, bool]] = []  # (shape, conv, next_time, picked)
+    items: List[Tuple[int, int, float, bool]] = []  # (shape, start_conv, next_time, picked)
     for conv_num, state in conveyors.items():
         for shape in state.queue:
             demands[conv_num][shape] += 1
-
-    # Items are distributed along each local belt segment at t=0 and then circulate.
-    # This avoids all items appearing at exactly the same time.
-    for conv_num, state in conveyors.items():
-        n_local = len(state.queue)
-        if n_local == 0:
-            continue
-        step = FULL_LOOP_SECONDS / n_local
-        for i, shape in enumerate(state.queue):
-            items.append((shape, conv_num, i * step, False))
 
     global_supply = [0] * len(SHAPE_COLUMNS)
     global_demand = [0] * len(SHAPE_COLUMNS)
@@ -90,9 +89,47 @@ def simulate_greedy(conveyors: Dict[int, ConveyorState]) -> List[Tuple[int, int,
     if global_supply != global_demand:
         raise ValueError("Infeasible input: global shape supply must equal global demand.")
 
-    pq: List[Tuple[float, int, int]] = []
-    for item_id, (_, conv, t0, _) in enumerate(items):
-        heapq.heappush(pq, (t0, conv, item_id))
+    if all_load_at_conveyor_0:
+        # All items load onto conveyor 0 only. Clock starts when first item is loaded (t=0).
+        # Each item is added load_spacing apart (e.g. half a conveyor belt = 2.5s).
+        # load_sequence: optional explicit order of shapes (enables tote order + item order within tote).
+        if load_sequence is not None:
+            if len(load_sequence) != sum(global_demand):
+                raise ValueError(
+                    f"load_sequence length {len(load_sequence)} != total items {sum(global_demand)}"
+                )
+            seq_counts = [0] * len(SHAPE_COLUMNS)
+            for s in load_sequence:
+                if 0 <= s < len(SHAPE_COLUMNS):
+                    seq_counts[s] += 1
+            if seq_counts != global_demand:
+                raise ValueError(
+                    "load_sequence shape counts do not match conveyor demand"
+                )
+            use_sequence = list(load_sequence)
+        else:
+            use_sequence = []
+            for s in range(len(SHAPE_COLUMNS)):
+                use_sequence.extend([s] * global_demand[s])
+        pq: List[Tuple[float, int, int]] = []
+        for item_id, shape in enumerate(use_sequence):
+            t0 = item_id * load_spacing
+            items.append((shape, 0, t0, False))
+            heapq.heappush(pq, (t0, 0, item_id))
+            if return_trace:
+                trace_events.append((t0, "LOAD", (item_id, shape, 0)))
+    else:
+        # Original: items distributed along each local belt segment (staggered over 20s per conveyor).
+        for conv_num, state in conveyors.items():
+            n_local = len(state.queue)
+            if n_local == 0:
+                continue
+            step = FULL_LOOP_SECONDS / n_local
+            for i, shape in enumerate(state.queue):
+                items.append((shape, conv_num, i * step, False))
+        pq = []
+        for item_id, (_, conv, t0, _) in enumerate(items):
+            heapq.heappush(pq, (t0, conv, item_id))
 
     picked = [False] * len(items)
     total_items = len(items)
@@ -107,15 +144,24 @@ def simulate_greedy(conveyors: Dict[int, ConveyorState]) -> List[Tuple[int, int,
         if demands[conv_num][shape] > 0:
             demands[conv_num][shape] -= 1
             picked[item_id] = True
-            results.append((conv_num, shape, round(now, 6)))
+            t_pick = round(now, 6)
+            results.append((conv_num, shape, t_pick))
+            if return_trace:
+                trace_events.append((t_pick, "PICK", (item_id, conv_num, shape)))
             continue
 
         next_conv = (conv_num + 1) % NUM_CONVEYORS
-        heapq.heappush(pq, (now + HOP_SECONDS, next_conv, item_id))
+        t_hop = now + HOP_SECONDS
+        if return_trace:
+            trace_events.append((t_hop, "HOP", (item_id, conv_num, next_conv)))
+        heapq.heappush(pq, (t_hop, next_conv, item_id))
 
     if len(results) != total_items:
         raise ValueError("Simulation ended before all items were picked. Check demand assumptions.")
 
+    if return_trace:
+        trace_events.sort(key=lambda e: (e[0], {"LOAD": 0, "HOP": 1, "PICK": 2}[e[1]], e[2][0]))
+        return results, trace_events
     return results
 
 
@@ -135,10 +181,25 @@ def main() -> None:
     )
     parser.add_argument("input_csv", type=Path, help="Path to conveyor input CSV")
     parser.add_argument("output_csv", type=Path, help="Path to write simulation output CSV")
+    parser.add_argument(
+        "--all-load-at-conveyor-0",
+        action="store_true",
+        help="All items load onto conveyor 0 only; clock starts at first load; items spaced load_spacing apart.",
+    )
+    parser.add_argument(
+        "--load-spacing",
+        type=float,
+        default=LOAD_SPACING_SECONDS,
+        help="Seconds between loading consecutive items at conveyor 0 (default: 2.5 = half a belt).",
+    )
     args = parser.parse_args()
 
     conveyors = load_conveyors(args.input_csv)
-    rows = simulate_greedy(conveyors)
+    rows = simulate_greedy(
+        conveyors,
+        all_load_at_conveyor_0=args.all_load_at_conveyor_0,
+        load_spacing=args.load_spacing,
+    )
     write_output(rows, args.output_csv)
 
 

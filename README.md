@@ -5,9 +5,11 @@ Greedy conveyor simulation for the IDEAS Clinic case.
 ## Run
 
 ```bash
-python3 conveyor_sim.py \
-  '/Users/benfogerty/Downloads/MSE433_M3_Example input (1).csv' \
-  ./simulated_output.csv
+# Default: items staggered per conveyor (from input)
+python3 conveyor_sim.py input.csv output.csv
+
+# All items load at conveyor 0, 2.5s apart (half a belt); makespan = total time to last pick
+python3 conveyor_sim.py input.csv output.csv --all-load-at-conveyor-0
 ```
 
 ## Notes
@@ -21,7 +23,9 @@ python3 conveyor_sim.py \
   - Moving from one conveyor to the next takes `5.0` seconds.
   - One full loop takes `20.0` seconds.
   - If an item is not picked when it passes a conveyor scanner, it continues circulating.
-  - Items are initially staggered along each conveyor segment so they do not all arrive at the exact same time.
+- **Two modes:**
+  - **Default:** Items are initially staggered along each conveyor segment (per input CSV) so they do not all arrive at the same time.
+  - **`--all-load-at-conveyor-0`:** All items load onto conveyor 0 only. Clock starts when the first item is loaded (t=0). Each item is added `--load-spacing` seconds apart (default 2.5 = half a conveyor belt). Total time (makespan) = time until the last item is picked.
 
 ## How Generator Data Relates to This Simulator
 
@@ -34,6 +38,7 @@ python3 conveyor_sim.py \
 - In this case study, the main optimization decision is how to transform generated order+tote data into conveyor-level input counts.
 - That organization/mapping step is what you optimize.
 - Then you run the simulator and evaluate resulting KPIs (for example: completion time, throughput, and circulation count).
+- The **`scheduler/`** package contains the optimization and comparison code (LPT, joint methods, visualization). See `scheduler/README.md` for commands.
 
 ## Reading Generated Data
 
