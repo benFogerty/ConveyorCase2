@@ -12,6 +12,12 @@ problem has four decision dimensions: (1) order sequence, (2) conveyor per order
 
   BaselineRR            Same identity order (0,1,2,...). Round-robin conveyor assignment
                         (pos 0→conv 0, 1→1, 2→2, 3→0). Default tote/item order.
+  
+  GreedyMakespanInsertion
+                        Order sequence only. Greedy constructive heuristic that
+                        builds the sequence incrementally by selecting the next
+                        order that minimizes makespan (last_order completion).
+                        Travel-aware conveyor assignment; default tote/item order.
 
   OrderToteHill         Order sequence + tote loading order only (no conveyor
                         or item-order moves). First-improvement hill climb from LPT start.
