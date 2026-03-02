@@ -6,19 +6,19 @@ Methods: Baseline, BaselineRR, GreedyMakespanInsertion, OrderToteHill, FullHillC
   Baseline: avg=142.64s
   BaselineRR: avg=135.97s
   GreedyMakespanInsertion: avg=148.19s
-  OrderToteHill: avg=129.31s
+  OrderToteHill: avg=128.61s
   FullHillClimb: avg=128.61s
   SimulatedAnnealing: avg=121.67s
-  GeneticAlgorithm: avg=123.06s
+  GeneticAlgorithm: avg=120.42s
   TabuSearch: avg=126.67s
   IteratedLocalSearch: avg=128.61s
 
 BaselineRR vs Baseline: 4.7% (avg; positive = RR better)
 GreedyMakespanInsertion vs Baseline: -3.9% improvement (avg)
-OrderToteHill vs Baseline: 9.3% improvement (avg)
+OrderToteHill vs Baseline: 9.8% improvement (avg)
 FullHillClimb vs Baseline: 9.8% improvement (avg)
 SimulatedAnnealing vs Baseline: 14.7% improvement (avg)
-GeneticAlgorithm vs Baseline: 13.7% improvement (avg)
+GeneticAlgorithm vs Baseline: 15.6% improvement (avg)
 TabuSearch vs Baseline: 11.2% improvement (avg)
 IteratedLocalSearch vs Baseline: 9.8% improvement (avg)
 

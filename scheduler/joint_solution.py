@@ -212,9 +212,16 @@ def solution_from_order_and_tote(
     order_sequence: List[int],
     tote_loading_order: List[int],
     travel_aware: bool = True,
+    conveyor_assignment: Optional[List[int]] = None,
 ) -> Solution:
-    """Build a Solution from explicit order_sequence and tote_loading_order. Totes (contents) from data; we only supply the ORDER of totes and use data order for items within each tote."""
-    o2c = _derived_order_to_conveyor(order_sequence, travel_aware)
+    """Build a Solution from explicit order_sequence and tote_loading_order. Totes (contents) from data; we only supply the ORDER of totes and use data order for items within each tote. If conveyor_assignment is provided (list of conveyor 0..3 per position in order_sequence), use it; else derive from travel_aware."""
+    if conveyor_assignment is not None and len(conveyor_assignment) == len(order_sequence):
+        o2c = {
+            order_sequence[i]: conveyor_assignment[i] % NUM_CONVEYORS
+            for i in range(len(order_sequence))
+        }
+    else:
+        o2c = _derived_order_to_conveyor(order_sequence, travel_aware)
     # Same items per tote as data (we only reorder within tote when optimizing)
     item_order = {tote_id: list(items) for tote_id, items in tote_contents.items()}
     return Solution(
@@ -471,6 +478,22 @@ def _order_crossover(parent_a: List[int], parent_b: List[int], rng: random.Rando
     return child
 
 
+def _conveyor_crossover(
+    parent_a: List[int], parent_b: List[int], rng: random.Random
+) -> List[int]:
+    """Segment crossover for conveyor assignment (list of 0..NUM_CONVEYORS-1 per order)."""
+    n = len(parent_a)
+    if n <= 1:
+        return list(parent_a)
+    i = rng.randrange(n)
+    j = rng.randrange(n)
+    if i > j:
+        i, j = j, i
+    child = list(parent_b)
+    child[i : j + 1] = parent_a[i : j + 1]
+    return child
+
+
 def genetic_algorithm(
     orders: List[Tuple[int, List[Tuple[int, int]]]],
     tote_contents: Dict[int, List[Tuple[int, int, int]]],
@@ -483,7 +506,7 @@ def genetic_algorithm(
     seed: Optional[int] = None,
     verbose: bool = False,
 ) -> Tuple[Solution, float, int]:
-    """Genetic algorithm: population of (order_sequence, tote_loading_order), OX crossover, swap/insert mutation, selection by last_order. Returns (best_solution, best_value, evals)."""
+    """Genetic algorithm: population of (order_sequence, tote_loading_order, conveyor_assignment), OX crossover, swap/insert mutation, conveyor crossover/mutation, selection by last_order. Returns (best_solution, best_value, evals)."""
     if seed is not None:
         rng = random.Random(seed)
     else:
@@ -504,17 +527,22 @@ def genetic_algorithm(
         rng.shuffle(out)
         return out
 
+    def random_conveyor_assignment() -> List[int]:
+        return [rng.randrange(NUM_CONVEYORS) for _ in range(n_ord)]
+
     def eval_sol(sol: Solution) -> float:
         v, _, _ = evaluate_solution(sol, orders, tote_contents, objective=objective)
         return v
 
-    # Initial population: one LPT-based, rest random
+    # Initial population: one LPT-based with derived conveyor, rest random (order, tote, conveyor)
     init_sol = initial_solution(orders, tote_contents, travel_aware=True)
-    population: List[Tuple[List[int], List[int]]] = [
-        (list(init_sol.order_sequence), list(init_sol.tote_loading_order))
+    init_conv = [init_sol.order_to_conveyor[oid] for oid in init_sol.order_sequence]
+    population: List[Tuple[List[int], List[int], List[int]]] = [
+        (list(init_sol.order_sequence), list(init_sol.tote_loading_order), list(init_conv))
     ]
     for _ in range(pop_size - 1):
-        population.append((random_order_seq(), random_tote_order()))
+        ord_seq = random_order_seq()
+        population.append((ord_seq, random_tote_order(), random_conveyor_assignment()))
 
     best_sol = init_sol.copy()
     best_val = eval_sol(best_sol)
@@ -524,8 +552,11 @@ def genetic_algorithm(
         # Evaluate population (cache values)
         pop_sols: List[Solution] = []
         pop_vals: List[float] = []
-        for ord_seq, tot_seq in population:
-            sol = solution_from_order_and_tote(orders, tote_contents, ord_seq, tot_seq, travel_aware=True)
+        for ord_seq, tot_seq, conv_list in population:
+            sol = solution_from_order_and_tote(
+                orders, tote_contents, ord_seq, tot_seq,
+                travel_aware=True, conveyor_assignment=conv_list,
+            )
             v = eval_sol(sol)
             evals += 1
             pop_sols.append(sol)
@@ -543,17 +574,19 @@ def genetic_algorithm(
             cands = rng.sample(range(pop_size), min(tournament_size, pop_size))
             return min(cands, key=lambda i: pop_vals[i])
 
-        next_pop: List[Tuple[List[int], List[int]]] = []
+        next_pop: List[Tuple[List[int], List[int], List[int]]] = []
         for _ in range(pop_size):
             p1 = select_one()
             p2 = select_one()
             if rng.random() < p_crossover:
                 ord_seq = _order_crossover(population[p1][0], population[p2][0], rng)
                 tot_seq = _order_crossover(population[p1][1], population[p2][1], rng)
+                conv_list = _conveyor_crossover(population[p1][2], population[p2][2], rng)
             else:
                 ord_seq = list(population[p1][0])
                 tot_seq = list(population[p1][1])
-            # Mutation
+                conv_list = list(population[p1][2])
+            # Mutation: order sequence
             if rng.random() < p_mutate and n_ord >= 2:
                 if rng.random() < 0.5:
                     i, j = rng.sample(range(n_ord), 2)
@@ -562,6 +595,7 @@ def genetic_algorithm(
                     i, j = rng.sample(range(n_ord), 2)
                     o = ord_seq.pop(i)
                     ord_seq.insert(j, o)
+            # Mutation: tote order
             if rng.random() < p_mutate and n_tote >= 2:
                 if rng.random() < 0.5:
                     i, j = rng.sample(range(n_tote), 2)
@@ -570,7 +604,15 @@ def genetic_algorithm(
                     i, j = rng.sample(range(n_tote), 2)
                     t = tot_seq.pop(i)
                     tot_seq.insert(j, t)
-            next_pop.append((ord_seq, tot_seq))
+            # Mutation: conveyor assignment
+            if rng.random() < p_mutate and n_ord >= 1:
+                if rng.random() < 0.5:
+                    i = rng.randrange(n_ord)
+                    conv_list[i] = rng.randrange(NUM_CONVEYORS)
+                elif n_ord >= 2:
+                    i, j = rng.sample(range(n_ord), 2)
+                    conv_list[i], conv_list[j] = conv_list[j], conv_list[i]
+            next_pop.append((ord_seq, tot_seq, conv_list))
         population = next_pop
 
     return best_sol, best_val, evals
@@ -781,7 +823,7 @@ def hill_climb_order_and_tote(
     max_evals: int = 500,
     verbose: bool = False,
 ) -> Tuple[Solution, float, int]:
-    """First-improvement hill climb over order sequence and tote loading order only (no conveyor, no item order). Returns (best_solution, best_value, evals)."""
+    """First-improvement hill climb over order sequence, tote loading order, and conveyor assignment (swap two orders' conveyors). No item order within totes. Returns (best_solution, best_value, evals)."""
     current = initial.copy()
     current_val, _, _ = evaluate_solution(current, orders, tote_contents, objective=objective)
     evals = 1
@@ -896,6 +938,24 @@ def hill_climb_order_and_tote(
                     current, current_val, improved, no_improve = s, val, True, 0
                     if verbose:
                         print(f"  OrderTote (tote 2-opt): {objective}={current_val:.2f}s")
+                    break
+            if improved:
+                break
+        if improved:
+            continue
+        # Conveyor swap (two orders) — optimize which conveyor each order is on
+        oids = list(current.order_to_conveyor.keys())
+        for i in range(len(oids)):
+            for j in range(i + 1, len(oids)):
+                o1, o2 = oids[i], oids[j]
+                s = current.copy()
+                s.order_to_conveyor[o1], s.order_to_conveyor[o2] = s.order_to_conveyor[o2], s.order_to_conveyor[o1]
+                val, _, _ = evaluate_solution(s, orders, tote_contents, objective=objective)
+                evals += 1
+                if val < current_val:
+                    current, current_val, improved, no_improve = s, val, True, 0
+                    if verbose:
+                        print(f"  OrderTote (conv swap): {objective}={current_val:.2f}s")
                     break
             if improved:
                 break
