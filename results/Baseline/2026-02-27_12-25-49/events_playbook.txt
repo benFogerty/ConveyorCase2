@@ -3,7 +3,7 @@ EVENT PLAYBOOK (chronological)
 Instance: 2026-02-27_12-25-49
 Method: Baseline
 Last-order completion: 137.50s
-Total events (LOAD+HOP+PICK): 193
+Total events (LOAD+HOP+PICK): 289
 LOAD item_id = index of that item in the load sequence; see tote_and_item_order.txt for which tote/item each id corresponds to.
 When an order receives its last pick, an ORDER COMPLETE line is shown (with completion time and conveyor).
 ============================================================
@@ -17,14 +17,14 @@ When an order receives its last pick, an ORDER COMPLETE line is shown (with comp
     7.  t=  10.00s  LOAD   item_id=  4  shape=0 (cirle)  at conveyor 0
     8.  t=  10.00s  HOP    item_id=  0  conveyor 1 -> 2
     9.  t=  10.00s  HOP    item_id=  2  conveyor 0 -> 1
-   10.  t=  10.00s  PICK   item_id=  2  shape=6 (heart)  at conveyor 1
-   11.  t=  10.00s  PICK   item_id=  4  shape=0 (cirle)  at conveyor 0
-   12.  t=  12.50s  LOAD   item_id=  5  shape=3 (triangle)  at conveyor 0
-   13.  t=  12.50s  HOP    item_id=  1  conveyor 1 -> 2
-   14.  t=  12.50s  HOP    item_id=  3  conveyor 0 -> 1
-   15.  t=  12.50s  PICK   item_id=  3  shape=3 (triangle)  at conveyor 1
-   16.  t=  15.00s  LOAD   item_id=  6  shape=3 (triangle)  at conveyor 0
-   17.  t=  15.00s  HOP    item_id=  0  conveyor 2 -> 3
+   10.  t=  10.00s  PICK   item_id=  4  shape=0 (cirle)  at conveyor 0
+   11.  t=  12.50s  LOAD   item_id=  5  shape=3 (triangle)  at conveyor 0
+   12.  t=  12.50s  HOP    item_id=  1  conveyor 1 -> 2
+   13.  t=  12.50s  HOP    item_id=  3  conveyor 0 -> 1
+   14.  t=  12.50s  PICK   item_id=  3  shape=3 (triangle)  at conveyor 1
+   15.  t=  15.00s  LOAD   item_id=  6  shape=3 (triangle)  at conveyor 0
+   16.  t=  15.00s  HOP    item_id=  0  conveyor 2 -> 3
+   17.  t=  15.00s  HOP    item_id=  2  conveyor 1 -> 2
    18.  t=  15.00s  PICK   item_id=  0  shape=4 (star)  at conveyor 3
    19.  t=  17.50s  LOAD   item_id=  7  shape=3 (triangle)  at conveyor 0
    20.  t=  17.50s  HOP    item_id=  1  conveyor 2 -> 3
@@ -33,185 +33,281 @@ When an order receives its last pick, an ORDER COMPLETE line is shown (with comp
        >>> ORDER 0 COMPLETE at t=17.50s at conveyor 3
    23.  t=  17.50s  PICK   item_id=  5  shape=3 (triangle)  at conveyor 1
    24.  t=  20.00s  LOAD   item_id=  8  shape=2 (trapezoid)  at conveyor 0
-   25.  t=  20.00s  HOP    item_id=  6  conveyor 0 -> 1
-   26.  t=  20.00s  PICK   item_id=  6  shape=3 (triangle)  at conveyor 1
+   25.  t=  20.00s  HOP    item_id=  2  conveyor 2 -> 3
+   26.  t=  20.00s  HOP    item_id=  6  conveyor 0 -> 1
    27.  t=  20.00s  PICK   item_id=  8  shape=2 (trapezoid)  at conveyor 0
        >>> ORDER 3 COMPLETE at t=20.00s at conveyor 0
    28.  t=  22.50s  LOAD   item_id=  9  shape=2 (trapezoid)  at conveyor 0
    29.  t=  22.50s  HOP    item_id=  7  conveyor 0 -> 1
-   30.  t=  22.50s  PICK   item_id=  7  shape=3 (triangle)  at conveyor 1
-   31.  t=  22.50s  PICK   item_id=  9  shape=2 (trapezoid)  at conveyor 0
-   32.  t=  25.00s  LOAD   item_id= 10  shape=0 (cirle)  at conveyor 0
-   33.  t=  27.50s  LOAD   item_id= 11  shape=0 (cirle)  at conveyor 0
-   34.  t=  30.00s  LOAD   item_id= 12  shape=0 (cirle)  at conveyor 0
-   35.  t=  30.00s  HOP    item_id= 10  conveyor 0 -> 1
-   36.  t=  30.00s  PICK   item_id= 10  shape=0 (cirle)  at conveyor 1
-   37.  t=  32.50s  LOAD   item_id= 13  shape=3 (triangle)  at conveyor 0
-   38.  t=  32.50s  HOP    item_id= 11  conveyor 0 -> 1
-   39.  t=  35.00s  LOAD   item_id= 14  shape=3 (triangle)  at conveyor 0
-   40.  t=  35.00s  HOP    item_id= 12  conveyor 0 -> 1
-   41.  t=  37.50s  LOAD   item_id= 15  shape=3 (triangle)  at conveyor 0
-   42.  t=  37.50s  HOP    item_id= 11  conveyor 1 -> 2
-   43.  t=  37.50s  HOP    item_id= 13  conveyor 0 -> 1
-   44.  t=  37.50s  PICK   item_id= 11  shape=0 (cirle)  at conveyor 2
-   45.  t=  37.50s  PICK   item_id= 13  shape=3 (triangle)  at conveyor 1
-   46.  t=  40.00s  LOAD   item_id= 16  shape=5 (moon)  at conveyor 0
-   47.  t=  40.00s  HOP    item_id= 12  conveyor 1 -> 2
-   48.  t=  40.00s  HOP    item_id= 14  conveyor 0 -> 1
-   49.  t=  40.00s  PICK   item_id= 12  shape=0 (cirle)  at conveyor 2
-   50.  t=  40.00s  PICK   item_id= 14  shape=3 (triangle)  at conveyor 1
-       >>> ORDER 10 COMPLETE at t=40.00s at conveyor 1
-   51.  t=  42.50s  LOAD   item_id= 17  shape=3 (triangle)  at conveyor 0
-   52.  t=  42.50s  HOP    item_id= 15  conveyor 0 -> 1
-   53.  t=  45.00s  LOAD   item_id= 18  shape=3 (triangle)  at conveyor 0
-   54.  t=  45.00s  HOP    item_id= 16  conveyor 0 -> 1
-   55.  t=  45.00s  PICK   item_id= 16  shape=5 (moon)  at conveyor 1
-   56.  t=  47.50s  LOAD   item_id= 19  shape=3 (triangle)  at conveyor 0
-   57.  t=  47.50s  HOP    item_id= 15  conveyor 1 -> 2
-   58.  t=  47.50s  HOP    item_id= 17  conveyor 0 -> 1
-   59.  t=  47.50s  PICK   item_id= 15  shape=3 (triangle)  at conveyor 2
-   60.  t=  50.00s  LOAD   item_id= 20  shape=3 (triangle)  at conveyor 0
-   61.  t=  50.00s  HOP    item_id= 18  conveyor 0 -> 1
-   62.  t=  52.50s  LOAD   item_id= 21  shape=3 (triangle)  at conveyor 0
-   63.  t=  52.50s  HOP    item_id= 17  conveyor 1 -> 2
-   64.  t=  52.50s  HOP    item_id= 19  conveyor 0 -> 1
-   65.  t=  52.50s  PICK   item_id= 17  shape=3 (triangle)  at conveyor 2
-   66.  t=  55.00s  LOAD   item_id= 22  shape=2 (trapezoid)  at conveyor 0
-   67.  t=  55.00s  HOP    item_id= 18  conveyor 1 -> 2
-   68.  t=  55.00s  HOP    item_id= 20  conveyor 0 -> 1
-   69.  t=  55.00s  PICK   item_id= 18  shape=3 (triangle)  at conveyor 2
-   70.  t=  55.00s  PICK   item_id= 22  shape=2 (trapezoid)  at conveyor 0
-       >>> ORDER 11 COMPLETE at t=55.00s at conveyor 0
-   71.  t=  57.50s  LOAD   item_id= 23  shape=1 (pentagon)  at conveyor 0
-   72.  t=  57.50s  HOP    item_id= 19  conveyor 1 -> 2
-   73.  t=  57.50s  HOP    item_id= 21  conveyor 0 -> 1
-   74.  t=  57.50s  PICK   item_id= 19  shape=3 (triangle)  at conveyor 2
-   75.  t=  57.50s  PICK   item_id= 23  shape=1 (pentagon)  at conveyor 0
-   76.  t=  60.00s  LOAD   item_id= 24  shape=1 (pentagon)  at conveyor 0
-   77.  t=  60.00s  HOP    item_id= 20  conveyor 1 -> 2
-   78.  t=  60.00s  PICK   item_id= 24  shape=1 (pentagon)  at conveyor 0
-   79.  t=  62.50s  LOAD   item_id= 25  shape=1 (pentagon)  at conveyor 0
-   80.  t=  62.50s  HOP    item_id= 21  conveyor 1 -> 2
-   81.  t=  62.50s  PICK   item_id= 25  shape=1 (pentagon)  at conveyor 0
+   30.  t=  22.50s  PICK   item_id=  9  shape=2 (trapezoid)  at conveyor 0
+   31.  t=  25.00s  LOAD   item_id= 10  shape=0 (cirle)  at conveyor 0
+   32.  t=  25.00s  HOP    item_id=  2  conveyor 3 -> 0
+   33.  t=  25.00s  HOP    item_id=  6  conveyor 1 -> 2
+   34.  t=  27.50s  LOAD   item_id= 11  shape=0 (cirle)  at conveyor 0
+   35.  t=  27.50s  HOP    item_id=  7  conveyor 1 -> 2
+   36.  t=  30.00s  LOAD   item_id= 12  shape=0 (cirle)  at conveyor 0
+   37.  t=  30.00s  HOP    item_id=  2  conveyor 0 -> 1
+   38.  t=  30.00s  HOP    item_id=  6  conveyor 2 -> 3
+   39.  t=  30.00s  HOP    item_id= 10  conveyor 0 -> 1
+   40.  t=  30.00s  PICK   item_id=  6  shape=3 (triangle)  at conveyor 3
+   41.  t=  32.50s  LOAD   item_id= 13  shape=3 (triangle)  at conveyor 0
+   42.  t=  32.50s  HOP    item_id=  7  conveyor 2 -> 3
+   43.  t=  32.50s  HOP    item_id= 11  conveyor 0 -> 1
+   44.  t=  32.50s  PICK   item_id=  7  shape=3 (triangle)  at conveyor 3
+   45.  t=  35.00s  LOAD   item_id= 14  shape=3 (triangle)  at conveyor 0
+   46.  t=  35.00s  HOP    item_id=  2  conveyor 1 -> 2
+   47.  t=  35.00s  HOP    item_id= 10  conveyor 1 -> 2
+   48.  t=  35.00s  HOP    item_id= 12  conveyor 0 -> 1
+   49.  t=  35.00s  PICK   item_id= 10  shape=0 (cirle)  at conveyor 2
+   50.  t=  37.50s  LOAD   item_id= 15  shape=3 (triangle)  at conveyor 0
+   51.  t=  37.50s  HOP    item_id= 11  conveyor 1 -> 2
+   52.  t=  37.50s  HOP    item_id= 13  conveyor 0 -> 1
+   53.  t=  37.50s  PICK   item_id= 11  shape=0 (cirle)  at conveyor 2
+   54.  t=  40.00s  LOAD   item_id= 16  shape=5 (moon)  at conveyor 0
+   55.  t=  40.00s  HOP    item_id=  2  conveyor 2 -> 3
+   56.  t=  40.00s  HOP    item_id= 12  conveyor 1 -> 2
+   57.  t=  40.00s  HOP    item_id= 14  conveyor 0 -> 1
+   58.  t=  40.00s  PICK   item_id= 12  shape=0 (cirle)  at conveyor 2
+   59.  t=  42.50s  LOAD   item_id= 17  shape=3 (triangle)  at conveyor 0
+   60.  t=  42.50s  HOP    item_id= 13  conveyor 1 -> 2
+   61.  t=  42.50s  HOP    item_id= 15  conveyor 0 -> 1
+   62.  t=  45.00s  LOAD   item_id= 18  shape=3 (triangle)  at conveyor 0
+   63.  t=  45.00s  HOP    item_id=  2  conveyor 3 -> 0
+   64.  t=  45.00s  HOP    item_id= 14  conveyor 1 -> 2
+   65.  t=  45.00s  HOP    item_id= 16  conveyor 0 -> 1
+   66.  t=  47.50s  LOAD   item_id= 19  shape=3 (triangle)  at conveyor 0
+   67.  t=  47.50s  HOP    item_id= 13  conveyor 2 -> 3
+   68.  t=  47.50s  HOP    item_id= 15  conveyor 1 -> 2
+   69.  t=  47.50s  HOP    item_id= 17  conveyor 0 -> 1
+   70.  t=  47.50s  PICK   item_id= 13  shape=3 (triangle)  at conveyor 3
+       >>> ORDER 4 COMPLETE at t=47.50s at conveyor 3
+   71.  t=  50.00s  LOAD   item_id= 20  shape=3 (triangle)  at conveyor 0
+   72.  t=  50.00s  HOP    item_id=  2  conveyor 0 -> 1
+   73.  t=  50.00s  HOP    item_id= 14  conveyor 2 -> 3
+   74.  t=  50.00s  HOP    item_id= 16  conveyor 1 -> 2
+   75.  t=  50.00s  HOP    item_id= 18  conveyor 0 -> 1
+   76.  t=  50.00s  PICK   item_id= 16  shape=5 (moon)  at conveyor 2
+       >>> ORDER 1 COMPLETE at t=50.00s at conveyor 2
+   77.  t=  52.50s  LOAD   item_id= 21  shape=3 (triangle)  at conveyor 0
+   78.  t=  52.50s  HOP    item_id= 15  conveyor 2 -> 3
+   79.  t=  52.50s  HOP    item_id= 17  conveyor 1 -> 2
+   80.  t=  52.50s  HOP    item_id= 19  conveyor 0 -> 1
+   81.  t=  52.50s  PICK   item_id= 17  shape=3 (triangle)  at conveyor 2
+   82.  t=  55.00s  LOAD   item_id= 22  shape=2 (trapezoid)  at conveyor 0
+   83.  t=  55.00s  HOP    item_id=  2  conveyor 1 -> 2
+   84.  t=  55.00s  HOP    item_id= 14  conveyor 3 -> 0
+   85.  t=  55.00s  HOP    item_id= 18  conveyor 1 -> 2
+   86.  t=  55.00s  HOP    item_id= 20  conveyor 0 -> 1
+   87.  t=  57.50s  LOAD   item_id= 23  shape=1 (pentagon)  at conveyor 0
+   88.  t=  57.50s  HOP    item_id= 15  conveyor 3 -> 0
+   89.  t=  57.50s  HOP    item_id= 19  conveyor 1 -> 2
+   90.  t=  57.50s  HOP    item_id= 21  conveyor 0 -> 1
+   91.  t=  57.50s  PICK   item_id= 23  shape=1 (pentagon)  at conveyor 0
+   92.  t=  60.00s  LOAD   item_id= 24  shape=1 (pentagon)  at conveyor 0
+   93.  t=  60.00s  HOP    item_id=  2  conveyor 2 -> 3
+   94.  t=  60.00s  HOP    item_id= 14  conveyor 0 -> 1
+   95.  t=  60.00s  HOP    item_id= 18  conveyor 2 -> 3
+   96.  t=  60.00s  HOP    item_id= 20  conveyor 1 -> 2
+   97.  t=  60.00s  HOP    item_id= 22  conveyor 0 -> 1
+   98.  t=  60.00s  PICK   item_id=  2  shape=6 (heart)  at conveyor 3
+   99.  t=  60.00s  PICK   item_id= 22  shape=2 (trapezoid)  at conveyor 1
+  100.  t=  60.00s  PICK   item_id= 24  shape=1 (pentagon)  at conveyor 0
+  101.  t=  62.50s  LOAD   item_id= 25  shape=1 (pentagon)  at conveyor 0
+  102.  t=  62.50s  HOP    item_id= 15  conveyor 0 -> 1
+  103.  t=  62.50s  HOP    item_id= 19  conveyor 2 -> 3
+  104.  t=  62.50s  HOP    item_id= 21  conveyor 1 -> 2
+  105.  t=  62.50s  PICK   item_id= 25  shape=1 (pentagon)  at conveyor 0
        >>> ORDER 7 COMPLETE at t=62.50s at conveyor 0
-   82.  t=  65.00s  LOAD   item_id= 26  shape=0 (cirle)  at conveyor 0
-   83.  t=  65.00s  HOP    item_id= 20  conveyor 2 -> 3
-   84.  t=  65.00s  PICK   item_id= 20  shape=3 (triangle)  at conveyor 3
-   85.  t=  67.50s  LOAD   item_id= 27  shape=2 (trapezoid)  at conveyor 0
-   86.  t=  67.50s  HOP    item_id= 21  conveyor 2 -> 3
-   87.  t=  67.50s  PICK   item_id= 21  shape=3 (triangle)  at conveyor 3
-   88.  t=  70.00s  LOAD   item_id= 28  shape=2 (trapezoid)  at conveyor 0
-   89.  t=  70.00s  HOP    item_id= 26  conveyor 0 -> 1
-   90.  t=  72.50s  LOAD   item_id= 29  shape=1 (pentagon)  at conveyor 0
-   91.  t=  72.50s  HOP    item_id= 27  conveyor 0 -> 1
-   92.  t=  72.50s  PICK   item_id= 27  shape=2 (trapezoid)  at conveyor 1
-   93.  t=  75.00s  LOAD   item_id= 30  shape=1 (pentagon)  at conveyor 0
-   94.  t=  75.00s  HOP    item_id= 26  conveyor 1 -> 2
-   95.  t=  75.00s  HOP    item_id= 28  conveyor 0 -> 1
-   96.  t=  75.00s  PICK   item_id= 26  shape=0 (cirle)  at conveyor 2
-   97.  t=  77.50s  LOAD   item_id= 31  shape=3 (triangle)  at conveyor 0
-   98.  t=  77.50s  HOP    item_id= 29  conveyor 0 -> 1
-   99.  t=  77.50s  PICK   item_id= 29  shape=1 (pentagon)  at conveyor 1
-  100.  t=  80.00s  LOAD   item_id= 32  shape=5 (moon)  at conveyor 0
-  101.  t=  80.00s  HOP    item_id= 28  conveyor 1 -> 2
-  102.  t=  80.00s  HOP    item_id= 30  conveyor 0 -> 1
-  103.  t=  80.00s  PICK   item_id= 30  shape=1 (pentagon)  at conveyor 1
-  104.  t=  82.50s  LOAD   item_id= 33  shape=5 (moon)  at conveyor 0
-  105.  t=  82.50s  HOP    item_id= 31  conveyor 0 -> 1
-  106.  t=  85.00s  LOAD   item_id= 34  shape=2 (trapezoid)  at conveyor 0
-  107.  t=  85.00s  HOP    item_id= 28  conveyor 2 -> 3
-  108.  t=  85.00s  HOP    item_id= 32  conveyor 0 -> 1
-  109.  t=  85.00s  PICK   item_id= 28  shape=2 (trapezoid)  at conveyor 3
-  110.  t=  85.00s  PICK   item_id= 32  shape=5 (moon)  at conveyor 1
-       >>> ORDER 6 COMPLETE at t=85.00s at conveyor 1
-  111.  t=  87.50s  LOAD   item_id= 35  shape=1 (pentagon)  at conveyor 0
-  112.  t=  87.50s  HOP    item_id= 31  conveyor 1 -> 2
-  113.  t=  87.50s  HOP    item_id= 33  conveyor 0 -> 1
-  114.  t=  90.00s  LOAD   item_id= 36  shape=1 (pentagon)  at conveyor 0
-  115.  t=  90.00s  HOP    item_id= 34  conveyor 0 -> 1
-  116.  t=  92.50s  LOAD   item_id= 37  shape=1 (pentagon)  at conveyor 0
-  117.  t=  92.50s  HOP    item_id= 31  conveyor 2 -> 3
-  118.  t=  92.50s  HOP    item_id= 33  conveyor 1 -> 2
-  119.  t=  92.50s  HOP    item_id= 35  conveyor 0 -> 1
-  120.  t=  92.50s  PICK   item_id= 31  shape=3 (triangle)  at conveyor 3
-       >>> ORDER 4 COMPLETE at t=92.50s at conveyor 3
-  121.  t=  92.50s  PICK   item_id= 33  shape=5 (moon)  at conveyor 2
-       >>> ORDER 1 COMPLETE at t=92.50s at conveyor 2
-  122.  t=  92.50s  PICK   item_id= 35  shape=1 (pentagon)  at conveyor 1
+  106.  t=  65.00s  LOAD   item_id= 26  shape=0 (cirle)  at conveyor 0
+  107.  t=  65.00s  HOP    item_id= 14  conveyor 1 -> 2
+  108.  t=  65.00s  HOP    item_id= 18  conveyor 3 -> 0
+  109.  t=  65.00s  HOP    item_id= 20  conveyor 2 -> 3
+  110.  t=  67.50s  LOAD   item_id= 27  shape=2 (trapezoid)  at conveyor 0
+  111.  t=  67.50s  HOP    item_id= 15  conveyor 1 -> 2
+  112.  t=  67.50s  HOP    item_id= 19  conveyor 3 -> 0
+  113.  t=  67.50s  HOP    item_id= 21  conveyor 2 -> 3
+  114.  t=  67.50s  PICK   item_id= 27  shape=2 (trapezoid)  at conveyor 0
+       >>> ORDER 11 COMPLETE at t=67.50s at conveyor 0
+  115.  t=  70.00s  LOAD   item_id= 28  shape=2 (trapezoid)  at conveyor 0
+  116.  t=  70.00s  HOP    item_id= 14  conveyor 2 -> 3
+  117.  t=  70.00s  HOP    item_id= 18  conveyor 0 -> 1
+  118.  t=  70.00s  HOP    item_id= 20  conveyor 3 -> 0
+  119.  t=  70.00s  HOP    item_id= 26  conveyor 0 -> 1
+  120.  t=  72.50s  LOAD   item_id= 29  shape=1 (pentagon)  at conveyor 0
+  121.  t=  72.50s  HOP    item_id= 15  conveyor 2 -> 3
+  122.  t=  72.50s  HOP    item_id= 19  conveyor 0 -> 1
+  123.  t=  72.50s  HOP    item_id= 21  conveyor 3 -> 0
+  124.  t=  75.00s  LOAD   item_id= 30  shape=1 (pentagon)  at conveyor 0
+  125.  t=  75.00s  HOP    item_id= 14  conveyor 3 -> 0
+  126.  t=  75.00s  HOP    item_id= 18  conveyor 1 -> 2
+  127.  t=  75.00s  HOP    item_id= 20  conveyor 0 -> 1
+  128.  t=  75.00s  HOP    item_id= 26  conveyor 1 -> 2
+  129.  t=  75.00s  HOP    item_id= 28  conveyor 0 -> 1
+  130.  t=  77.50s  LOAD   item_id= 31  shape=3 (triangle)  at conveyor 0
+  131.  t=  77.50s  HOP    item_id= 15  conveyor 3 -> 0
+  132.  t=  77.50s  HOP    item_id= 19  conveyor 1 -> 2
+  133.  t=  77.50s  HOP    item_id= 21  conveyor 0 -> 1
+  134.  t=  77.50s  HOP    item_id= 29  conveyor 0 -> 1
+  135.  t=  77.50s  PICK   item_id= 29  shape=1 (pentagon)  at conveyor 1
+  136.  t=  80.00s  LOAD   item_id= 32  shape=5 (moon)  at conveyor 0
+  137.  t=  80.00s  HOP    item_id= 14  conveyor 0 -> 1
+  138.  t=  80.00s  HOP    item_id= 18  conveyor 2 -> 3
+  139.  t=  80.00s  HOP    item_id= 20  conveyor 1 -> 2
+  140.  t=  80.00s  HOP    item_id= 26  conveyor 2 -> 3
+  141.  t=  80.00s  HOP    item_id= 28  conveyor 1 -> 2
+  142.  t=  80.00s  HOP    item_id= 30  conveyor 0 -> 1
+  143.  t=  80.00s  PICK   item_id= 30  shape=1 (pentagon)  at conveyor 1
+  144.  t=  82.50s  LOAD   item_id= 33  shape=5 (moon)  at conveyor 0
+  145.  t=  82.50s  HOP    item_id= 15  conveyor 0 -> 1
+  146.  t=  82.50s  HOP    item_id= 19  conveyor 2 -> 3
+  147.  t=  82.50s  HOP    item_id= 21  conveyor 1 -> 2
+  148.  t=  82.50s  HOP    item_id= 31  conveyor 0 -> 1
+  149.  t=  85.00s  LOAD   item_id= 34  shape=2 (trapezoid)  at conveyor 0
+  150.  t=  85.00s  HOP    item_id= 14  conveyor 1 -> 2
+  151.  t=  85.00s  HOP    item_id= 18  conveyor 3 -> 0
+  152.  t=  85.00s  HOP    item_id= 20  conveyor 2 -> 3
+  153.  t=  85.00s  HOP    item_id= 26  conveyor 3 -> 0
+  154.  t=  85.00s  HOP    item_id= 28  conveyor 2 -> 3
+  155.  t=  85.00s  HOP    item_id= 32  conveyor 0 -> 1
+  156.  t=  85.00s  PICK   item_id= 28  shape=2 (trapezoid)  at conveyor 3
+  157.  t=  87.50s  LOAD   item_id= 35  shape=1 (pentagon)  at conveyor 0
+  158.  t=  87.50s  HOP    item_id= 15  conveyor 1 -> 2
+  159.  t=  87.50s  HOP    item_id= 19  conveyor 3 -> 0
+  160.  t=  87.50s  HOP    item_id= 21  conveyor 2 -> 3
+  161.  t=  87.50s  HOP    item_id= 31  conveyor 1 -> 2
+  162.  t=  87.50s  HOP    item_id= 33  conveyor 0 -> 1
+  163.  t=  90.00s  LOAD   item_id= 36  shape=1 (pentagon)  at conveyor 0
+  164.  t=  90.00s  HOP    item_id= 14  conveyor 2 -> 3
+  165.  t=  90.00s  HOP    item_id= 18  conveyor 0 -> 1
+  166.  t=  90.00s  HOP    item_id= 20  conveyor 3 -> 0
+  167.  t=  90.00s  HOP    item_id= 26  conveyor 0 -> 1
+  168.  t=  90.00s  HOP    item_id= 32  conveyor 1 -> 2
+  169.  t=  90.00s  HOP    item_id= 34  conveyor 0 -> 1
+  170.  t=  92.50s  LOAD   item_id= 37  shape=1 (pentagon)  at conveyor 0
+  171.  t=  92.50s  HOP    item_id= 15  conveyor 2 -> 3
+  172.  t=  92.50s  HOP    item_id= 19  conveyor 0 -> 1
+  173.  t=  92.50s  HOP    item_id= 21  conveyor 3 -> 0
+  174.  t=  92.50s  HOP    item_id= 31  conveyor 2 -> 3
+  175.  t=  92.50s  HOP    item_id= 33  conveyor 1 -> 2
+  176.  t=  92.50s  HOP    item_id= 35  conveyor 0 -> 1
+  177.  t=  92.50s  PICK   item_id= 35  shape=1 (pentagon)  at conveyor 1
        >>> ORDER 2 COMPLETE at t=92.50s at conveyor 1
-  123.  t=  95.00s  LOAD   item_id= 38  shape=5 (moon)  at conveyor 0
-  124.  t=  95.00s  HOP    item_id= 34  conveyor 1 -> 2
-  125.  t=  95.00s  HOP    item_id= 36  conveyor 0 -> 1
-  126.  t=  97.50s  LOAD   item_id= 39  shape=5 (moon)  at conveyor 0
-  127.  t=  97.50s  HOP    item_id= 37  conveyor 0 -> 1
-  128.  t= 100.00s  LOAD   item_id= 40  shape=2 (trapezoid)  at conveyor 0
-  129.  t= 100.00s  HOP    item_id= 34  conveyor 2 -> 3
-  130.  t= 100.00s  HOP    item_id= 36  conveyor 1 -> 2
-  131.  t= 100.00s  HOP    item_id= 38  conveyor 0 -> 1
-  132.  t= 100.00s  PICK   item_id= 34  shape=2 (trapezoid)  at conveyor 3
-  133.  t= 100.00s  PICK   item_id= 36  shape=1 (pentagon)  at conveyor 2
-  134.  t= 102.50s  LOAD   item_id= 41  shape=2 (trapezoid)  at conveyor 0
-  135.  t= 102.50s  HOP    item_id= 37  conveyor 1 -> 2
-  136.  t= 102.50s  HOP    item_id= 39  conveyor 0 -> 1
-  137.  t= 102.50s  PICK   item_id= 37  shape=1 (pentagon)  at conveyor 2
+  178.  t=  95.00s  LOAD   item_id= 38  shape=5 (moon)  at conveyor 0
+  179.  t=  95.00s  HOP    item_id= 14  conveyor 3 -> 0
+  180.  t=  95.00s  HOP    item_id= 18  conveyor 1 -> 2
+  181.  t=  95.00s  HOP    item_id= 20  conveyor 0 -> 1
+  182.  t=  95.00s  HOP    item_id= 26  conveyor 1 -> 2
+  183.  t=  95.00s  HOP    item_id= 32  conveyor 2 -> 3
+  184.  t=  95.00s  HOP    item_id= 34  conveyor 1 -> 2
+  185.  t=  95.00s  HOP    item_id= 36  conveyor 0 -> 1
+  186.  t=  95.00s  PICK   item_id= 20  shape=3 (triangle)  at conveyor 1
+  187.  t=  95.00s  PICK   item_id= 32  shape=5 (moon)  at conveyor 3
+  188.  t=  97.50s  LOAD   item_id= 39  shape=5 (moon)  at conveyor 0
+  189.  t=  97.50s  HOP    item_id= 15  conveyor 3 -> 0
+  190.  t=  97.50s  HOP    item_id= 19  conveyor 1 -> 2
+  191.  t=  97.50s  HOP    item_id= 21  conveyor 0 -> 1
+  192.  t=  97.50s  HOP    item_id= 31  conveyor 3 -> 0
+  193.  t=  97.50s  HOP    item_id= 33  conveyor 2 -> 3
+  194.  t=  97.50s  HOP    item_id= 37  conveyor 0 -> 1
+  195.  t=  97.50s  PICK   item_id= 33  shape=5 (moon)  at conveyor 3
+  196.  t= 100.00s  LOAD   item_id= 40  shape=2 (trapezoid)  at conveyor 0
+  197.  t= 100.00s  HOP    item_id= 14  conveyor 0 -> 1
+  198.  t= 100.00s  HOP    item_id= 18  conveyor 2 -> 3
+  199.  t= 100.00s  HOP    item_id= 26  conveyor 2 -> 3
+  200.  t= 100.00s  HOP    item_id= 34  conveyor 2 -> 3
+  201.  t= 100.00s  HOP    item_id= 36  conveyor 1 -> 2
+  202.  t= 100.00s  HOP    item_id= 38  conveyor 0 -> 1
+  203.  t= 100.00s  PICK   item_id= 34  shape=2 (trapezoid)  at conveyor 3
+       >>> ORDER 8 COMPLETE at t=100.00s at conveyor 3
+  204.  t= 100.00s  PICK   item_id= 36  shape=1 (pentagon)  at conveyor 2
+  205.  t= 100.00s  PICK   item_id= 38  shape=5 (moon)  at conveyor 1
+  206.  t= 102.50s  LOAD   item_id= 41  shape=2 (trapezoid)  at conveyor 0
+  207.  t= 102.50s  HOP    item_id= 15  conveyor 0 -> 1
+  208.  t= 102.50s  HOP    item_id= 19  conveyor 2 -> 3
+  209.  t= 102.50s  HOP    item_id= 21  conveyor 1 -> 2
+  210.  t= 102.50s  HOP    item_id= 31  conveyor 0 -> 1
+  211.  t= 102.50s  HOP    item_id= 37  conveyor 1 -> 2
+  212.  t= 102.50s  HOP    item_id= 39  conveyor 0 -> 1
+  213.  t= 102.50s  PICK   item_id= 37  shape=1 (pentagon)  at conveyor 2
        >>> ORDER 5 COMPLETE at t=102.50s at conveyor 2
-  138.  t= 105.00s  LOAD   item_id= 42  shape=6 (heart)  at conveyor 0
-  139.  t= 105.00s  HOP    item_id= 38  conveyor 1 -> 2
-  140.  t= 105.00s  HOP    item_id= 40  conveyor 0 -> 1
-  141.  t= 107.50s  LOAD   item_id= 43  shape=1 (pentagon)  at conveyor 0
-  142.  t= 107.50s  HOP    item_id= 39  conveyor 1 -> 2
-  143.  t= 107.50s  HOP    item_id= 41  conveyor 0 -> 1
-  144.  t= 110.00s  LOAD   item_id= 44  shape=0 (cirle)  at conveyor 0
-  145.  t= 110.00s  HOP    item_id= 38  conveyor 2 -> 3
-  146.  t= 110.00s  HOP    item_id= 40  conveyor 1 -> 2
-  147.  t= 110.00s  HOP    item_id= 42  conveyor 0 -> 1
-  148.  t= 110.00s  PICK   item_id= 38  shape=5 (moon)  at conveyor 3
-  149.  t= 112.50s  LOAD   item_id= 45  shape=0 (cirle)  at conveyor 0
-  150.  t= 112.50s  HOP    item_id= 39  conveyor 2 -> 3
-  151.  t= 112.50s  HOP    item_id= 41  conveyor 1 -> 2
-  152.  t= 112.50s  HOP    item_id= 43  conveyor 0 -> 1
-  153.  t= 112.50s  PICK   item_id= 39  shape=5 (moon)  at conveyor 3
-  154.  t= 115.00s  LOAD   item_id= 46  shape=0 (cirle)  at conveyor 0
-  155.  t= 115.00s  HOP    item_id= 40  conveyor 2 -> 3
-  156.  t= 115.00s  HOP    item_id= 42  conveyor 1 -> 2
-  157.  t= 115.00s  HOP    item_id= 44  conveyor 0 -> 1
-  158.  t= 115.00s  PICK   item_id= 40  shape=2 (trapezoid)  at conveyor 3
-  159.  t= 115.00s  PICK   item_id= 42  shape=6 (heart)  at conveyor 2
-  160.  t= 117.50s  LOAD   item_id= 47  shape=5 (moon)  at conveyor 0
-  161.  t= 117.50s  HOP    item_id= 41  conveyor 2 -> 3
-  162.  t= 117.50s  HOP    item_id= 43  conveyor 1 -> 2
-  163.  t= 117.50s  HOP    item_id= 45  conveyor 0 -> 1
-  164.  t= 117.50s  PICK   item_id= 41  shape=2 (trapezoid)  at conveyor 3
-  165.  t= 117.50s  PICK   item_id= 43  shape=1 (pentagon)  at conveyor 2
-  166.  t= 120.00s  LOAD   item_id= 48  shape=6 (heart)  at conveyor 0
-  167.  t= 120.00s  HOP    item_id= 44  conveyor 1 -> 2
-  168.  t= 120.00s  HOP    item_id= 46  conveyor 0 -> 1
-  169.  t= 120.00s  PICK   item_id= 44  shape=0 (cirle)  at conveyor 2
-  170.  t= 122.50s  LOAD   item_id= 49  shape=6 (heart)  at conveyor 0
-  171.  t= 122.50s  HOP    item_id= 45  conveyor 1 -> 2
-  172.  t= 122.50s  HOP    item_id= 47  conveyor 0 -> 1
-  173.  t= 122.50s  PICK   item_id= 45  shape=0 (cirle)  at conveyor 2
-  174.  t= 125.00s  LOAD   item_id= 50  shape=0 (cirle)  at conveyor 0
-  175.  t= 125.00s  HOP    item_id= 46  conveyor 1 -> 2
-  176.  t= 125.00s  HOP    item_id= 48  conveyor 0 -> 1
-  177.  t= 125.00s  PICK   item_id= 46  shape=0 (cirle)  at conveyor 2
+  214.  t= 102.50s  PICK   item_id= 39  shape=5 (moon)  at conveyor 1
+  215.  t= 105.00s  LOAD   item_id= 42  shape=6 (heart)  at conveyor 0
+  216.  t= 105.00s  HOP    item_id= 14  conveyor 1 -> 2
+  217.  t= 105.00s  HOP    item_id= 18  conveyor 3 -> 0
+  218.  t= 105.00s  HOP    item_id= 26  conveyor 3 -> 0
+  219.  t= 105.00s  HOP    item_id= 40  conveyor 0 -> 1
+  220.  t= 105.00s  PICK   item_id= 14  shape=3 (triangle)  at conveyor 2
+  221.  t= 107.50s  LOAD   item_id= 43  shape=1 (pentagon)  at conveyor 0
+  222.  t= 107.50s  HOP    item_id= 15  conveyor 1 -> 2
+  223.  t= 107.50s  HOP    item_id= 19  conveyor 3 -> 0
+  224.  t= 107.50s  HOP    item_id= 21  conveyor 2 -> 3
+  225.  t= 107.50s  HOP    item_id= 31  conveyor 1 -> 2
+  226.  t= 107.50s  HOP    item_id= 41  conveyor 0 -> 1
+  227.  t= 107.50s  PICK   item_id= 15  shape=3 (triangle)  at conveyor 2
+  228.  t= 107.50s  PICK   item_id= 31  shape=3 (triangle)  at conveyor 2
+  229.  t= 110.00s  LOAD   item_id= 44  shape=0 (cirle)  at conveyor 0
+  230.  t= 110.00s  HOP    item_id= 18  conveyor 0 -> 1
+  231.  t= 110.00s  HOP    item_id= 26  conveyor 0 -> 1
+  232.  t= 110.00s  HOP    item_id= 40  conveyor 1 -> 2
+  233.  t= 110.00s  HOP    item_id= 42  conveyor 0 -> 1
+  234.  t= 110.00s  PICK   item_id= 42  shape=6 (heart)  at conveyor 1
+       >>> ORDER 6 COMPLETE at t=110.00s at conveyor 1
+  235.  t= 112.50s  LOAD   item_id= 45  shape=0 (cirle)  at conveyor 0
+  236.  t= 112.50s  HOP    item_id= 19  conveyor 0 -> 1
+  237.  t= 112.50s  HOP    item_id= 21  conveyor 3 -> 0
+  238.  t= 112.50s  HOP    item_id= 41  conveyor 1 -> 2
+  239.  t= 112.50s  HOP    item_id= 43  conveyor 0 -> 1
+  240.  t= 112.50s  PICK   item_id= 19  shape=3 (triangle)  at conveyor 1
+  241.  t= 115.00s  LOAD   item_id= 46  shape=0 (cirle)  at conveyor 0
+  242.  t= 115.00s  HOP    item_id= 18  conveyor 1 -> 2
+  243.  t= 115.00s  HOP    item_id= 26  conveyor 1 -> 2
+  244.  t= 115.00s  HOP    item_id= 40  conveyor 2 -> 3
+  245.  t= 115.00s  HOP    item_id= 44  conveyor 0 -> 1
+  246.  t= 115.00s  PICK   item_id= 26  shape=0 (cirle)  at conveyor 2
+  247.  t= 115.00s  PICK   item_id= 40  shape=2 (trapezoid)  at conveyor 3
+  248.  t= 115.00s  PICK   item_id= 44  shape=0 (cirle)  at conveyor 1
+  249.  t= 117.50s  LOAD   item_id= 47  shape=5 (moon)  at conveyor 0
+  250.  t= 117.50s  HOP    item_id= 21  conveyor 0 -> 1
+  251.  t= 117.50s  HOP    item_id= 41  conveyor 2 -> 3
+  252.  t= 117.50s  HOP    item_id= 43  conveyor 1 -> 2
+  253.  t= 117.50s  HOP    item_id= 45  conveyor 0 -> 1
+  254.  t= 117.50s  PICK   item_id= 21  shape=3 (triangle)  at conveyor 1
+  255.  t= 117.50s  PICK   item_id= 41  shape=2 (trapezoid)  at conveyor 3
+  256.  t= 120.00s  LOAD   item_id= 48  shape=6 (heart)  at conveyor 0
+  257.  t= 120.00s  HOP    item_id= 18  conveyor 2 -> 3
+  258.  t= 120.00s  HOP    item_id= 46  conveyor 0 -> 1
+  259.  t= 122.50s  LOAD   item_id= 49  shape=6 (heart)  at conveyor 0
+  260.  t= 122.50s  HOP    item_id= 43  conveyor 2 -> 3
+  261.  t= 122.50s  HOP    item_id= 45  conveyor 1 -> 2
+  262.  t= 122.50s  HOP    item_id= 47  conveyor 0 -> 1
+  263.  t= 122.50s  PICK   item_id= 45  shape=0 (cirle)  at conveyor 2
+  264.  t= 125.00s  LOAD   item_id= 50  shape=0 (cirle)  at conveyor 0
+  265.  t= 125.00s  HOP    item_id= 18  conveyor 3 -> 0
+  266.  t= 125.00s  HOP    item_id= 46  conveyor 1 -> 2
+  267.  t= 125.00s  HOP    item_id= 48  conveyor 0 -> 1
+  268.  t= 125.00s  PICK   item_id= 46  shape=0 (cirle)  at conveyor 2
        >>> ORDER 9 COMPLETE at t=125.00s at conveyor 2
-  178.  t= 127.50s  LOAD   item_id= 51  shape=0 (cirle)  at conveyor 0
-  179.  t= 127.50s  HOP    item_id= 47  conveyor 1 -> 2
-  180.  t= 127.50s  HOP    item_id= 49  conveyor 0 -> 1
-  181.  t= 130.00s  HOP    item_id= 48  conveyor 1 -> 2
-  182.  t= 130.00s  HOP    item_id= 50  conveyor 0 -> 1
-  183.  t= 130.00s  PICK   item_id= 48  shape=6 (heart)  at conveyor 2
-  184.  t= 132.50s  HOP    item_id= 47  conveyor 2 -> 3
-  185.  t= 132.50s  HOP    item_id= 49  conveyor 1 -> 2
-  186.  t= 132.50s  HOP    item_id= 51  conveyor 0 -> 1
-  187.  t= 132.50s  PICK   item_id= 47  shape=5 (moon)  at conveyor 3
+  269.  t= 127.50s  LOAD   item_id= 51  shape=0 (cirle)  at conveyor 0
+  270.  t= 127.50s  HOP    item_id= 43  conveyor 3 -> 0
+  271.  t= 127.50s  HOP    item_id= 47  conveyor 1 -> 2
+  272.  t= 127.50s  HOP    item_id= 49  conveyor 0 -> 1
+  273.  t= 130.00s  HOP    item_id= 18  conveyor 0 -> 1
+  274.  t= 130.00s  HOP    item_id= 48  conveyor 1 -> 2
+  275.  t= 130.00s  HOP    item_id= 50  conveyor 0 -> 1
+  276.  t= 130.00s  PICK   item_id= 18  shape=3 (triangle)  at conveyor 1
+       >>> ORDER 10 COMPLETE at t=130.00s at conveyor 1
+  277.  t= 130.00s  PICK   item_id= 48  shape=6 (heart)  at conveyor 2
+  278.  t= 132.50s  HOP    item_id= 43  conveyor 0 -> 1
+  279.  t= 132.50s  HOP    item_id= 47  conveyor 2 -> 3
+  280.  t= 132.50s  HOP    item_id= 49  conveyor 1 -> 2
+  281.  t= 132.50s  HOP    item_id= 51  conveyor 0 -> 1
+  282.  t= 132.50s  PICK   item_id= 47  shape=5 (moon)  at conveyor 3
        >>> ORDER 12 COMPLETE at t=132.50s at conveyor 3
-  188.  t= 135.00s  HOP    item_id= 50  conveyor 1 -> 2
-  189.  t= 135.00s  PICK   item_id= 50  shape=0 (cirle)  at conveyor 2
-  190.  t= 137.50s  HOP    item_id= 49  conveyor 2 -> 3
-  191.  t= 137.50s  HOP    item_id= 51  conveyor 1 -> 2
-  192.  t= 137.50s  PICK   item_id= 49  shape=6 (heart)  at conveyor 3
-       >>> ORDER 8 COMPLETE at t=137.50s at conveyor 3
-  193.  t= 137.50s  PICK   item_id= 51  shape=0 (cirle)  at conveyor 2
+  283.  t= 132.50s  PICK   item_id= 49  shape=6 (heart)  at conveyor 2
+  284.  t= 135.00s  HOP    item_id= 50  conveyor 1 -> 2
+  285.  t= 135.00s  PICK   item_id= 50  shape=0 (cirle)  at conveyor 2
+  286.  t= 137.50s  HOP    item_id= 43  conveyor 1 -> 2
+  287.  t= 137.50s  HOP    item_id= 51  conveyor 1 -> 2
+  288.  t= 137.50s  PICK   item_id= 43  shape=1 (pentagon)  at conveyor 2
+  289.  t= 137.50s  PICK   item_id= 51  shape=0 (cirle)  at conveyor 2
        >>> ORDER 13 COMPLETE at t=137.50s at conveyor 2
