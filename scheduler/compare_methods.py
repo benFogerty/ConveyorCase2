@@ -19,11 +19,10 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from conveyor_sim import SHAPE_COLUMNS, load_conveyors, simulate_greedy
 from scheduler.core import (
-    build_conveyor_input_from_assignment,
     build_load_sequence,
     load_generator_data,
     load_tote_data,
-    write_m3_input,
+    write_m3_input_by_order,
 )
 from scheduler.joint_solution import (
     Solution,
@@ -78,8 +77,10 @@ def write_playbook_folder(
     folder = out_dir / method_name / instance_id
     folder.mkdir(parents=True, exist_ok=True)
 
-    counts = build_conveyor_input_from_assignment(orders, solution.order_to_conveyor)
-    write_m3_input(counts, folder / "input.csv")
+    # One row per order: order_id, conv_num, shape columns (each conveyor's assigned orders explicit)
+    write_m3_input_by_order(
+        orders, solution.order_to_conveyor, solution.order_sequence, folder / "input.csv"
+    )
 
     load_seq = build_load_sequence(
         solution.order_sequence,
@@ -91,14 +92,17 @@ def write_playbook_folder(
     with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="") as f:
         tmp = Path(f.name)
     try:
-        write_m3_input(counts, tmp)
-        conveyors = load_conveyors(tmp)
+        write_m3_input_by_order(
+            orders, solution.order_to_conveyor, solution.order_sequence, tmp
+        )
+        conveyors, orders_per_conv = load_conveyors(tmp)
         results, trace_events = simulate_greedy(
             conveyors,
             all_load_at_conveyor_0=True,
             load_spacing=2.5,
             load_sequence=load_seq,
             return_trace=True,
+            orders_per_conveyor=orders_per_conv,
         )
     finally:
         tmp.unlink(missing_ok=True)
@@ -441,23 +445,26 @@ def main() -> None:
             print(f"  {inst_id}: " + " ".join(f"{m}={res[m]:.2f}" for m in METHODS))
 
         if getattr(args, "save_playbook", False):
-            playbook_method = args.playbook_method or min(METHODS, key=lambda m: res[m])
-            orders = load_generator_data(path)
-            tote_contents, _ = load_tote_data(path, orders)
-            if orders and tote_contents:
-                sol, val = get_solution_for_method(
-                    orders, tote_contents, playbook_method,
-                    seed=args.seed,
-                    joint_max_evals=args.joint_max_evals,
-                    joint_restarts=args.joint_restarts,
-                    polish=args.polish,
-                    polish_max_evals=args.polish_max_evals,
-                )
-                write_playbook_folder(
-                    orders, tote_contents, sol, playbook_method, inst_id, val, out_dir,
-                )
-                if not args.quiet:
-                    print(f"    Playbook: {out_dir / playbook_method / inst_id} (method={playbook_method})")
+            try:
+                playbook_method = args.playbook_method or min(METHODS, key=lambda m: res[m])
+                orders = load_generator_data(path)
+                tote_contents, _ = load_tote_data(path, orders)
+                if orders and tote_contents:
+                    sol, val = get_solution_for_method(
+                        orders, tote_contents, playbook_method,
+                        seed=args.seed,
+                        joint_max_evals=args.joint_max_evals,
+                        joint_restarts=args.joint_restarts,
+                        polish=args.polish,
+                        polish_max_evals=args.polish_max_evals,
+                    )
+                    write_playbook_folder(
+                        orders, tote_contents, sol, playbook_method, inst_id, val, out_dir,
+                    )
+                    if not args.quiet:
+                        print(f"    Playbook: {out_dir / playbook_method / inst_id} (method={playbook_method})")
+            except Exception as e:
+                print(f"Skip playbook for {inst_id}: {e}", file=sys.stderr)
 
     if not rows:
         raise SystemExit("No instances processed.")

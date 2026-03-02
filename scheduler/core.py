@@ -245,13 +245,34 @@ def build_conveyor_input_from_assignment(
 
 
 def write_m3_input(counts: List[List[int]], output_path: Path) -> None:
-    """Write M3_Example input CSV: conv_num and 8 shape columns."""
+    """Write M3_Example input CSV: conv_num and 8 shape columns (one row per conveyor)."""
     with output_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["conv_num", *SHAPE_COLUMNS])
         for conv in range(NUM_CONVEYORS):
             row = [conv] + [counts[conv][s] for s in range(NUM_SHAPES)]
             writer.writerow(row)
+
+
+def write_m3_input_by_order(
+    orders: List[Tuple[int, List[Tuple[int, int]]]],
+    order_to_conveyor: Dict[int, int],
+    order_sequence: List[int],
+    output_path: Path,
+) -> None:
+    """Write M3 input CSV with one row per order: order_id, conv_num, then 8 shape columns. Rows in order_sequence order so each conveyor's assigned orders are explicit."""
+    order_to_pairs = {idx: pairs for idx, pairs in orders}
+    with output_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["order_id", "conv_num", *SHAPE_COLUMNS])
+        for oid in order_sequence:
+            pairs = order_to_pairs.get(oid, [])
+            demand = [0] * NUM_SHAPES
+            for shape_id, qty in pairs:
+                if 0 <= shape_id < NUM_SHAPES:
+                    demand[shape_id] += qty
+            conv = order_to_conveyor.get(oid, 0)
+            writer.writerow([oid, conv] + demand)
 
 
 def main() -> None:

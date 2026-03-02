@@ -19,7 +19,14 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from conveyor_sim import load_conveyors, simulate_greedy
-from scheduler.core import build_conveyor_input, build_load_sequence, load_generator_data, lpt_order, write_m3_input
+from scheduler.core import (
+    NUM_CONVEYORS,
+    build_conveyor_input,
+    build_load_sequence,
+    load_generator_data,
+    lpt_order,
+    write_m3_input_by_order,
+)
 
 
 def makespan_for_sequence(
@@ -32,7 +39,10 @@ def makespan_for_sequence(
 ) -> float:
     """Return makespan (s) for the given order sequence. Uses all load at conv 0, 2.5s spacing.
     If tote_contents and order_to_totes are provided, load order = tote order + item order within tote."""
-    counts = build_conveyor_input(orders, order_sequence, travel_aware=travel_aware)
+    order_to_conveyor = {
+        oid: (NUM_CONVEYORS - 1 - pos % NUM_CONVEYORS) if travel_aware else (pos % NUM_CONVEYORS)
+        for pos, oid in enumerate(order_sequence)
+    }
     load_seq = None
     if tote_contents and order_to_totes:
         load_seq = build_load_sequence(
@@ -41,10 +51,14 @@ def makespan_for_sequence(
     with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="") as f:
         path = Path(f.name)
     try:
-        write_m3_input(counts, path)
-        conveyors = load_conveyors(path)
+        write_m3_input_by_order(orders, order_to_conveyor, order_sequence, path)
+        conveyors, orders_per_conv = load_conveyors(path)
         results = simulate_greedy(
-            conveyors, all_load_at_conveyor_0=True, load_spacing=2.5, load_sequence=load_seq
+            conveyors,
+            all_load_at_conveyor_0=True,
+            load_spacing=2.5,
+            load_sequence=load_seq,
+            orders_per_conveyor=orders_per_conv,
         )
         return max(t for _, _, t in results) if results else 0.0
     finally:

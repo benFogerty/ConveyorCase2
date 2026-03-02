@@ -1,0 +1,67 @@
+TOTE LOADING ORDER AND ITEMS PER TOTE
+============================================================
+Tote contents (which items are in which tote) come from the data (orders_totes.csv).
+This file shows the chosen ORDER of totes (first tote emptied completely, then next, etc.)
+and the ORDER of items within each tote as loaded onto the conveyor.
+Each line is one (order, shape, qty) from the data; qty = number of physical units.
+So a tote can have more than 3 physical items (e.g. two lines with qty 3 and qty 2 = 5 units).
+Item IDs match the LOAD events in events_playbook.txt (item_id in that file).
+
+  1. Tote 3  (item_id 0-1):
+       order 0  shape 0 (cirle)  qty 2
+
+  2. Tote 14  (item_id 2-12):
+       order 0  shape 1 (pentagon)  qty 3
+       order 0  shape 2 (trapezoid)  qty 2
+       order 6  shape 6 (heart)  qty 2
+       order 6  shape 5 (moon)  qty 3
+       order 10  shape 1 (pentagon)  qty 1
+
+  3. Tote 17  (item_id 13-14):
+       order 1  shape 2 (trapezoid)  qty 2
+
+  4. Tote 7  (item_id 15-17):
+       order 2  shape 4 (star)  qty 2
+       order 9  shape 1 (pentagon)  qty 1
+
+  5. Tote 4  (item_id 18-26):
+       order 3  shape 4 (star)  qty 3
+       order 3  shape 2 (trapezoid)  qty 1
+       order 3  shape 6 (heart)  qty 3
+       order 14  shape 6 (heart)  qty 2
+
+  6. Tote 1  (item_id 27-40):
+       order 4  shape 5 (moon)  qty 1
+       order 4  shape 4 (star)  qty 3
+       order 4  shape 0 (cirle)  qty 1
+       order 5  shape 2 (trapezoid)  qty 3
+       order 11  shape 2 (trapezoid)  qty 1
+       order 11  shape 1 (pentagon)  qty 2
+       order 14  shape 1 (pentagon)  qty 3
+
+  7. Tote 6  (item_id 41-41):
+       order 5  shape 0 (cirle)  qty 1
+
+  8. Tote 11  (item_id 42-43):
+       order 6  shape 2 (trapezoid)  qty 2
+
+  9. Tote 5  (item_id 44-45):
+       order 7  shape 3 (triangle)  qty 2
+
+  10. Tote 10  (item_id 46-46):
+       order 7  shape 0 (cirle)  qty 1
+
+  11. Tote 12  (item_id 47-50):
+       order 8  shape 5 (moon)  qty 1
+       order 8  shape 0 (cirle)  qty 2
+       order 8  shape 3 (triangle)  qty 1
+
+  12. Tote 0  (item_id 51-54):
+       order 10  shape 3 (triangle)  qty 1
+       order 12  shape 0 (cirle)  qty 3
+
+  13. Tote 15  (item_id 55-61):
+       order 12  shape 1 (pentagon)  qty 1
+       order 12  shape 6 (heart)  qty 3
+       order 13  shape 5 (moon)  qty 3
+
