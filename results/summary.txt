@@ -1,7 +1,7 @@
 Method comparison (objective: last_order completion, seconds)
 ============================================================
 
-Methods: Baseline, BaselineRR, GreedyMakespanInsertion, OrderToteHill, FullHillClimb, SimulatedAnnealing, GeneticAlgorithm, TabuSearch, IteratedLocalSearch
+Methods: Baseline, BaselineRR, GreedyMakespanInsertion, OrderToteHill, FullHillClimb, SimulatedAnnealing, GeneticAlgorithm, TabuSearch, IteratedLocalSearch, BeamSearch
 
   Baseline: avg=142.64s
   BaselineRR: avg=135.97s
@@ -12,6 +12,7 @@ Methods: Baseline, BaselineRR, GreedyMakespanInsertion, OrderToteHill, FullHillC
   GeneticAlgorithm: avg=120.42s
   TabuSearch: avg=126.67s
   IteratedLocalSearch: avg=128.61s
+  BeamSearch: avg=136.81s
 
 BaselineRR vs Baseline: 4.7% (avg; positive = RR better)
 GreedyMakespanInsertion vs Baseline: -3.9% improvement (avg)

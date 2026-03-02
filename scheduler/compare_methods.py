@@ -5,6 +5,7 @@ All outputs go into a single results folder.
 """
 
 from __future__ import annotations
+from scheduler.beam_search import beam_search_order_sequence
 
 import argparse
 import csv
@@ -61,6 +62,7 @@ METHODS = [
     "GeneticAlgorithm",
     "TabuSearch",
     "IteratedLocalSearch",
+    "BeamSearch",
 ]
 
 
@@ -309,6 +311,18 @@ def run_one_instance(
         orders, travel_aware=True, tote_contents=tote_contents, order_to_totes=None,
     )
     results["GreedyMakespanInsertion"] = mct_ms
+
+    # ---- Beam Search ----
+    seq, beam_ms = beam_search_order_sequence(
+        orders,
+        beam_width=5,
+        candidate_pool=12,
+        travel_aware=True,
+        tote_contents=tote_contents,
+        order_to_totes=None,
+    )
+    results["BeamSearch"] = beam_ms
+
 
     # OrderToteHill: hill climb over order sequence and tote loading order only (no conveyor, no item order)
     order_tote_start = initial_solution(orders, tote_contents, travel_aware=True)
