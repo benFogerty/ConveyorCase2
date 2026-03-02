@@ -8,6 +8,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
+# When load_conveyors reads one-row-per-order CSV: conv -> list of (order_id, demand[8]) in row order
+OrdersPerConveyor = Optional[Dict[int, List[Tuple[int, List[int]]]]]
+
 SHAPE_COLUMNS = [
     "cirle",  # source template typo kept intentionally
     "pentagon",
@@ -23,6 +26,8 @@ HOP_SECONDS = 5.0
 FULL_LOOP_SECONDS = HOP_SECONDS * NUM_CONVEYORS
 # When all items load at conveyor 0: time between loading consecutive items ("half a conveyor belt" = half of one hop)
 LOAD_SPACING_SECONDS = 2.5
+# Safety: abort sim if we process more events than this (avoids infinite loop from supply/order mismatch)
+MAX_SIM_ITERATIONS_PER_ITEM = 10000  # ~2500 full conveyor loops per item
 
 @dataclass
 class ConveyorState:
@@ -41,15 +46,37 @@ def _generic_gap(conv_num: int, emission_index: int, shape: int, circulation: in
     return 1.0
 
 
-def load_conveyors(input_csv: Path) -> Dict[int, ConveyorState]:
+def load_conveyors(input_csv: Path) -> Tuple[Dict[int, ConveyorState], OrdersPerConveyor]:
     conveyors: Dict[int, ConveyorState] = {}
+    orders_per_conv: OrdersPerConveyor = None
     with input_csv.open("r", newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
+        fieldnames = reader.fieldnames or []
         required = ["conv_num", *SHAPE_COLUMNS]
-        missing = [c for c in required if c not in (reader.fieldnames or [])]
+        missing = [c for c in required if c not in fieldnames]
         if missing:
             raise ValueError(f"Missing required columns: {missing}")
 
+        # One row per order (order_id, conv_num, shapes): build per-order demand and aggregate
+        if "order_id" in fieldnames:
+            counts: List[List[int]] = [[0] * len(SHAPE_COLUMNS) for _ in range(NUM_CONVEYORS)]
+            orders_per_conv = {c: [] for c in range(NUM_CONVEYORS)}
+            for row in reader:
+                conv_num = int(row["conv_num"].strip())
+                if 0 <= conv_num < NUM_CONVEYORS:
+                    demand = [int(row[col].strip()) for col in SHAPE_COLUMNS]
+                    order_id = int(row["order_id"].strip())
+                    orders_per_conv[conv_num].append((order_id, demand))
+                    for shape_idx, qty in enumerate(demand):
+                        counts[conv_num][shape_idx] += qty
+            for conv_num in range(NUM_CONVEYORS):
+                queue: List[int] = []
+                for shape_idx in range(len(SHAPE_COLUMNS)):
+                    queue.extend([shape_idx] * counts[conv_num][shape_idx])
+                conveyors[conv_num] = ConveyorState(conv_num=conv_num, queue=queue)
+            return (conveyors, orders_per_conv)
+
+        # One row per conveyor (legacy)
         for row in reader:
             conv_num = int(row["conv_num"].strip())
             queue: List[int] = []
@@ -58,7 +85,7 @@ def load_conveyors(input_csv: Path) -> Dict[int, ConveyorState]:
                 queue.extend([shape_idx] * count)
             conveyors[conv_num] = ConveyorState(conv_num=conv_num, queue=queue)
 
-    return conveyors
+    return (conveyors, None)
 
 
 def simulate_greedy(
@@ -67,6 +94,7 @@ def simulate_greedy(
     load_spacing: float = LOAD_SPACING_SECONDS,
     load_sequence: Optional[Sequence[int]] = None,
     return_trace: bool = False,
+    orders_per_conveyor: OrdersPerConveyor = None,
 ):
     if not conveyors:
         return ([] if not return_trace else ([], []))
@@ -79,6 +107,14 @@ def simulate_greedy(
     for conv_num, state in conveyors.items():
         for shape in state.queue:
             demands[conv_num][shape] += 1
+
+    # Mutable per-order remaining demand when using strict "first order only" rule
+    current_orders: Optional[Dict[int, List[Tuple[int, List[int]]]]] = None
+    if orders_per_conveyor is not None:
+        current_orders = {
+            c: [(oid, list(rem)) for oid, rem in orders_per_conveyor[c]]
+            for c in orders_per_conveyor
+        }
 
     global_supply = [0] * len(SHAPE_COLUMNS)
     global_demand = [0] * len(SHAPE_COLUMNS)
@@ -134,15 +170,38 @@ def simulate_greedy(
     picked = [False] * len(items)
     total_items = len(items)
     results: List[Tuple[int, int, float]] = []
+    max_iterations = total_items * MAX_SIM_ITERATIONS_PER_ITEM
+    iterations = 0
 
     while pq and len(results) < total_items:
+        iterations += 1
+        if iterations > max_iterations:
+            raise ValueError(
+                "Simulation did not complete within iteration limit; possible supply/order mismatch or deadlock."
+            )
         now, conv_num, item_id = heapq.heappop(pq)
         if picked[item_id]:
             continue
 
         shape, _, _, _ = items[item_id]
-        if demands[conv_num][shape] > 0:
-            demands[conv_num][shape] -= 1
+        do_pick = False
+        if current_orders is not None:
+            # Strict FIFO: only PICK if the current (first) order on this conveyor needs this shape
+            orders_list = current_orders.get(conv_num, [])
+            if orders_list:
+                order_id, remaining = orders_list[0]
+                if remaining[shape] > 0:
+                    do_pick = True
+                    remaining[shape] -= 1
+                    if sum(remaining) == 0:
+                        orders_list.pop(0)
+            # else: no current order for this conv -> HOP
+        else:
+            do_pick = demands[conv_num][shape] > 0
+            if do_pick:
+                demands[conv_num][shape] -= 1
+
+        if do_pick:
             picked[item_id] = True
             t_pick = round(now, 6)
             results.append((conv_num, shape, t_pick))
@@ -194,11 +253,12 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    conveyors = load_conveyors(args.input_csv)
+    conveyors, orders_per_conv = load_conveyors(args.input_csv)
     rows = simulate_greedy(
         conveyors,
         all_load_at_conveyor_0=args.all_load_at_conveyor_0,
         load_spacing=args.load_spacing,
+        orders_per_conveyor=orders_per_conv,
     )
     write_output(rows, args.output_csv)
 

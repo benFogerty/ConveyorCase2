@@ -17,12 +17,12 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from conveyor_sim import SHAPE_COLUMNS, load_conveyors, simulate_greedy
 from scheduler.core import (
-    build_conveyor_input,
+    NUM_CONVEYORS,
     build_load_sequence,
     load_generator_data,
     load_tote_data,
     lpt_order,
-    write_m3_input,
+    write_m3_input_by_order,
 )
 
 
@@ -71,18 +71,22 @@ def main() -> None:
     use_tote = bool(tote_contents and order_to_totes)
     load_sequence = build_load_sequence(order_sequence, tote_contents, args.travel_aware) if use_tote else None
 
-    counts = build_conveyor_input(orders, order_sequence, travel_aware=args.travel_aware)
+    order_to_conveyor = {
+        oid: (NUM_CONVEYORS - 1 - pos % NUM_CONVEYORS) if args.travel_aware else (pos % NUM_CONVEYORS)
+        for pos, oid in enumerate(order_sequence)
+    }
     with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="") as f:
         tmp = Path(f.name)
     try:
-        write_m3_input(counts, tmp)
-        conveyors = load_conveyors(tmp)
+        write_m3_input_by_order(orders, order_to_conveyor, order_sequence, tmp)
+        conveyors, orders_per_conv = load_conveyors(tmp)
         results, trace_events = simulate_greedy(
             conveyors,
             all_load_at_conveyor_0=True,
             load_spacing=2.5,
             load_sequence=load_sequence,
             return_trace=True,
+            orders_per_conveyor=orders_per_conv,
         )
     finally:
         tmp.unlink(missing_ok=True)

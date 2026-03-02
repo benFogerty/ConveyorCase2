@@ -31,6 +31,7 @@ from scheduler.core import (
     load_tote_data,
     lpt_order,
     write_m3_input,
+    write_m3_input_by_order,
 )
 
 
@@ -133,7 +134,6 @@ def evaluate_solution(
     Run sim for this solution. objective in ("last_item", "last_order").
     Returns (objective_value, results, trace_events or None).
     """
-    counts = build_conveyor_input_from_assignment(orders, solution.order_to_conveyor)
     load_seq = build_load_sequence(
         solution.order_sequence,
         tote_contents,
@@ -144,14 +144,17 @@ def evaluate_solution(
     with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="") as f:
         path = Path(f.name)
     try:
-        write_m3_input(counts, path)
-        conveyors = load_conveyors(path)
+        write_m3_input_by_order(
+            orders, solution.order_to_conveyor, solution.order_sequence, path
+        )
+        conveyors, orders_per_conv = load_conveyors(path)
         out = simulate_greedy(
             conveyors,
             all_load_at_conveyor_0=True,
             load_spacing=2.5,
             load_sequence=load_seq,
             return_trace=return_trace,
+            orders_per_conveyor=orders_per_conv,
         )
     finally:
         path.unlink(missing_ok=True)
@@ -1145,8 +1148,10 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if args.save_best:
-        counts = build_conveyor_input_from_assignment(orders, best_sol.order_to_conveyor)
-        write_m3_input(counts, out_dir / "joint_best_input.csv")
+        write_m3_input_by_order(
+            orders, best_sol.order_to_conveyor, best_sol.order_sequence,
+            out_dir / "joint_best_input.csv",
+        )
         if verbose:
             print(f"Saved {out_dir / 'joint_best_input.csv'}")
         # Write playbook for best solution: need to run sim with trace and dump events
@@ -1160,14 +1165,17 @@ def main() -> None:
         with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="") as f:
             tmp = Path(f.name)
         try:
-            write_m3_input(counts, tmp)
-            conveyors = load_conveyors(tmp)
+            write_m3_input_by_order(
+                orders, best_sol.order_to_conveyor, best_sol.order_sequence, tmp
+            )
+            conveyors, orders_per_conv = load_conveyors(tmp)
             results, trace = simulate_greedy(
                 conveyors,
                 all_load_at_conveyor_0=True,
                 load_spacing=2.5,
                 load_sequence=load_seq,
                 return_trace=True,
+                orders_per_conveyor=orders_per_conv,
             )
         finally:
             tmp.unlink(missing_ok=True)

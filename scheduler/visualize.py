@@ -461,8 +461,7 @@ def run_compare(generated_dir: Path, output_dir: Path) -> None:
     from scheduler.core import (
         load_generator_data,
         lpt_order,
-        build_conveyor_input,
-        write_m3_input,
+        write_m3_input_by_order,
         NUM_CONVEYORS,
     )
 
@@ -477,21 +476,29 @@ def run_compare(generated_dir: Path, output_dir: Path) -> None:
     n = len(orders)
     # LPT sequence
     lpt_seq = lpt_order(orders)
-    counts_lpt = build_conveyor_input(orders, lpt_seq)
+    order_to_conv_lpt = {
+        oid: (NUM_CONVEYORS - 1 - pos % NUM_CONVEYORS) for pos, oid in enumerate(lpt_seq)
+    }
     lpt_input = output_dir / "compare_lpt_input.csv"
-    write_m3_input(counts_lpt, lpt_input)
+    write_m3_input_by_order(orders, order_to_conv_lpt, lpt_seq, lpt_input)
 
     # Fixed order: 0, 1, 2, ..., n-1
     fixed_seq = list(range(n))
-    counts_fixed = build_conveyor_input(orders, fixed_seq)
+    order_to_conv_fixed = {oid: pos % NUM_CONVEYORS for pos, oid in enumerate(fixed_seq)}
     fixed_input = output_dir / "compare_fixed_input.csv"
-    write_m3_input(counts_fixed, fixed_input)
+    write_m3_input_by_order(orders, order_to_conv_fixed, fixed_seq, fixed_input)
 
     # Run sim: all items load at conveyor 0, 2.5s spacing (half a belt)
-    conveyors_lpt = load_conveyors(lpt_input)
-    conveyors_fixed = load_conveyors(fixed_input)
-    results_lpt = simulate_greedy(conveyors_lpt, all_load_at_conveyor_0=True, load_spacing=2.5)
-    results_baseline = simulate_greedy(conveyors_fixed, all_load_at_conveyor_0=True, load_spacing=2.5)
+    conveyors_lpt, orders_per_conv_lpt = load_conveyors(lpt_input)
+    conveyors_fixed, orders_per_conv_fixed = load_conveyors(fixed_input)
+    results_lpt = simulate_greedy(
+        conveyors_lpt, all_load_at_conveyor_0=True, load_spacing=2.5,
+        orders_per_conveyor=orders_per_conv_lpt,
+    )
+    results_baseline = simulate_greedy(
+        conveyors_fixed, all_load_at_conveyor_0=True, load_spacing=2.5,
+        orders_per_conveyor=orders_per_conv_fixed,
+    )
 
     # Write sim outputs for reference
     from conveyor_sim import write_output

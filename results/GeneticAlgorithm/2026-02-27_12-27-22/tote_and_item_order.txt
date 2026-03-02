@@ -7,33 +7,14 @@ Each line is one (order, shape, qty) from the data; qty = number of physical uni
 So a tote can have more than 3 physical items (e.g. two lines with qty 3 and qty 2 = 5 units).
 Item IDs match the LOAD events in events_playbook.txt (item_id in that file).
 
-  1. Tote 9  (item_id 0-0):
-       order 7  shape 4 (star)  qty 1
-
-  2. Tote 5  (item_id 1-2):
-       order 4  shape 1 (pentagon)  qty 2
-
-  3. Tote 14  (item_id 3-5):
-       order 6  shape 2 (trapezoid)  qty 1
-       order 6  shape 3 (triangle)  qty 2
-
-  4. Tote 2  (item_id 6-7):
-       order 4  shape 3 (triangle)  qty 2
-
-  5. Tote 1  (item_id 8-15):
-       order 2  shape 2 (trapezoid)  qty 1
-       order 5  shape 4 (star)  qty 3
-       order 7  shape 2 (trapezoid)  qty 3
-       order 7  shape 1 (pentagon)  qty 1
-
-  6. Tote 4  (item_id 16-18):
+  1. Tote 4  (item_id 0-2):
        order 8  shape 1 (pentagon)  qty 3
 
-  7. Tote 0  (item_id 19-20):
+  2. Tote 0  (item_id 3-4):
        order 5  shape 0 (cirle)  qty 1
        order 5  shape 2 (trapezoid)  qty 1
 
-  8. Tote 12  (item_id 21-30):
+  3. Tote 12  (item_id 5-14):
        order 0  shape 5 (moon)  qty 2
        order 0  shape 2 (trapezoid)  qty 3
        order 0  shape 0 (cirle)  qty 2
@@ -41,13 +22,32 @@ Item IDs match the LOAD events in events_playbook.txt (item_id in that file).
        order 9  shape 4 (star)  qty 1
        order 9  shape 1 (pentagon)  qty 1
 
-  9. Tote 3  (item_id 31-35):
+  4. Tote 1  (item_id 15-22):
+       order 2  shape 2 (trapezoid)  qty 1
+       order 5  shape 4 (star)  qty 3
+       order 7  shape 2 (trapezoid)  qty 3
+       order 7  shape 1 (pentagon)  qty 1
+
+  5. Tote 3  (item_id 23-27):
        order 6  shape 4 (star)  qty 2
        order 8  shape 0 (cirle)  qty 3
 
-  10. Tote 8  (item_id 36-42):
+  6. Tote 2  (item_id 28-29):
+       order 4  shape 3 (triangle)  qty 2
+
+  7. Tote 5  (item_id 30-31):
+       order 4  shape 1 (pentagon)  qty 2
+
+  8. Tote 8  (item_id 32-38):
        order 1  shape 3 (triangle)  qty 1
        order 3  shape 2 (trapezoid)  qty 2
        order 3  shape 3 (triangle)  qty 2
        order 3  shape 5 (moon)  qty 2
+
+  9. Tote 9  (item_id 39-39):
+       order 7  shape 4 (star)  qty 1
+
+  10. Tote 14  (item_id 40-42):
+       order 6  shape 2 (trapezoid)  qty 1
+       order 6  shape 3 (triangle)  qty 2
 
