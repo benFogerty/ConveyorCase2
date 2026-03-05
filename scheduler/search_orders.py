@@ -40,7 +40,7 @@ def makespan_for_sequence(
     """Return makespan (s) for the given order sequence. Uses all load at conv 0, 2.5s spacing.
     If tote_contents and order_to_totes are provided, load order = tote order + item order within tote."""
     order_to_conveyor = {
-        oid: (NUM_CONVEYORS - 1 - pos % NUM_CONVEYORS) if travel_aware else (pos % NUM_CONVEYORS)
+        oid: (NUM_CONVEYORS - (pos % NUM_CONVEYORS)) if travel_aware else ((pos % NUM_CONVEYORS) + 1)
         for pos, oid in enumerate(order_sequence)
     }
     load_seq = None

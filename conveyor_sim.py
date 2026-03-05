@@ -22,9 +22,11 @@ SHAPE_COLUMNS = [
     "cross",
 ]
 NUM_CONVEYORS = 4
+# Conveyors are numbered 1..4 (1 = load point, 4 = farthest)
+CONVEYOR_IDS = list(range(1, NUM_CONVEYORS + 1))
 HOP_SECONDS = 5.0
 FULL_LOOP_SECONDS = HOP_SECONDS * NUM_CONVEYORS
-# When all items load at conveyor 0: time between loading consecutive items ("half a conveyor belt" = half of one hop)
+# When all items load at conveyor 1: time between loading consecutive items ("half a conveyor belt" = half of one hop)
 LOAD_SPACING_SECONDS = 2.5
 # Safety: abort sim if we process more events than this (avoids infinite loop from supply/order mismatch)
 MAX_SIM_ITERATIONS_PER_ITEM = 10000  # ~2500 full conveyor loops per item
@@ -57,28 +59,30 @@ def load_conveyors(input_csv: Path) -> Tuple[Dict[int, ConveyorState], OrdersPer
         if missing:
             raise ValueError(f"Missing required columns: {missing}")
 
-        # One row per order (order_id, conv_num, shapes): build per-order demand and aggregate
+        # One row per order (order_id, conv_num, shapes): build per-order demand and aggregate (conv_num 1..4)
         if "order_id" in fieldnames:
-            counts: List[List[int]] = [[0] * len(SHAPE_COLUMNS) for _ in range(NUM_CONVEYORS)]
-            orders_per_conv = {c: [] for c in range(NUM_CONVEYORS)}
+            counts: Dict[int, List[int]] = {c: [0] * len(SHAPE_COLUMNS) for c in CONVEYOR_IDS}
+            orders_per_conv = {c: [] for c in CONVEYOR_IDS}
             for row in reader:
                 conv_num = int(row["conv_num"].strip())
-                if 0 <= conv_num < NUM_CONVEYORS:
+                if conv_num in CONVEYOR_IDS:
                     demand = [int(row[col].strip()) for col in SHAPE_COLUMNS]
                     order_id = int(row["order_id"].strip())
                     orders_per_conv[conv_num].append((order_id, demand))
                     for shape_idx, qty in enumerate(demand):
                         counts[conv_num][shape_idx] += qty
-            for conv_num in range(NUM_CONVEYORS):
+            for conv_num in CONVEYOR_IDS:
                 queue: List[int] = []
                 for shape_idx in range(len(SHAPE_COLUMNS)):
                     queue.extend([shape_idx] * counts[conv_num][shape_idx])
                 conveyors[conv_num] = ConveyorState(conv_num=conv_num, queue=queue)
             return (conveyors, orders_per_conv)
 
-        # One row per conveyor (legacy)
+        # One row per conveyor (legacy); conv_num must be 1..4
         for row in reader:
             conv_num = int(row["conv_num"].strip())
+            if conv_num not in CONVEYOR_IDS:
+                continue
             queue: List[int] = []
             for shape_idx, col in enumerate(SHAPE_COLUMNS):
                 count = int(row[col].strip())
@@ -126,9 +130,10 @@ def simulate_greedy(
         raise ValueError("Infeasible input: global shape supply must equal global demand.")
 
     if all_load_at_conveyor_0:
-        # All items load onto conveyor 0 only. Clock starts when first item is loaded (t=0).
+        # All items load onto conveyor 1 only. Clock starts when first item is loaded (t=0).
         # Each item is added load_spacing apart (e.g. half a conveyor belt = 2.5s).
         # load_sequence: optional explicit order of shapes (enables tote order + item order within tote).
+        load_conv = CONVEYOR_IDS[0]  # 1
         if load_sequence is not None:
             if len(load_sequence) != sum(global_demand):
                 raise ValueError(
@@ -150,10 +155,10 @@ def simulate_greedy(
         pq: List[Tuple[float, int, int]] = []
         for item_id, shape in enumerate(use_sequence):
             t0 = item_id * load_spacing
-            items.append((shape, 0, t0, False))
-            heapq.heappush(pq, (t0, 0, item_id))
+            items.append((shape, load_conv, t0, False))
+            heapq.heappush(pq, (t0, load_conv, item_id))
             if return_trace:
-                trace_events.append((t0, "LOAD", (item_id, shape, 0)))
+                trace_events.append((t0, "LOAD", (item_id, shape, load_conv)))
     else:
         # Original: items distributed along each local belt segment (staggered over 20s per conveyor).
         for conv_num, state in conveyors.items():
@@ -209,7 +214,7 @@ def simulate_greedy(
                 trace_events.append((t_pick, "PICK", (item_id, conv_num, shape)))
             continue
 
-        next_conv = (conv_num + 1) % NUM_CONVEYORS
+        next_conv = (conv_num % NUM_CONVEYORS) + 1  # 1->2, 2->3, 3->4, 4->1
         t_hop = now + HOP_SECONDS
         if return_trace:
             trace_events.append((t_hop, "HOP", (item_id, conv_num, next_conv)))
@@ -243,13 +248,13 @@ def main() -> None:
     parser.add_argument(
         "--all-load-at-conveyor-0",
         action="store_true",
-        help="All items load onto conveyor 0 only; clock starts at first load; items spaced load_spacing apart.",
+        help="All items load onto conveyor 1 only; clock starts at first load; items spaced load_spacing apart.",
     )
     parser.add_argument(
         "--load-spacing",
         type=float,
         default=LOAD_SPACING_SECONDS,
-        help="Seconds between loading consecutive items at conveyor 0 (default: 2.5 = half a belt).",
+        help="Seconds between loading consecutive items at conveyor 1 (default: 2.5 = half a belt).",
     )
     args = parser.parse_args()
 

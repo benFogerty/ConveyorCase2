@@ -72,7 +72,7 @@ def main() -> None:
     load_sequence = build_load_sequence(order_sequence, tote_contents, args.travel_aware) if use_tote else None
 
     order_to_conveyor = {
-        oid: (NUM_CONVEYORS - 1 - pos % NUM_CONVEYORS) if args.travel_aware else (pos % NUM_CONVEYORS)
+        oid: (NUM_CONVEYORS - (pos % NUM_CONVEYORS)) if args.travel_aware else ((pos % NUM_CONVEYORS) + 1)
         for pos, oid in enumerate(order_sequence)
     }
     with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="") as f:

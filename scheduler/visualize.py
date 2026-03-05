@@ -51,7 +51,7 @@ def load_sim_output(path: Path) -> list[tuple[int, int, float]]:
 
 
 def load_input_counts(path: Path) -> list[list[int]]:
-    """Load M3 input CSV; return counts[conv][shape] (list of 4 lists of 8 ints)."""
+    """Load M3 input CSV; return counts[conv_index][shape] (list of 4 lists of 8 ints). conv_num 1..4 -> index 0..3."""
     shape_cols = [
         "cirle", "pentagon", "trapezoid", "triangle",
         "star", "moon", "heart", "cross",
@@ -61,9 +61,10 @@ def load_input_counts(path: Path) -> list[list[int]]:
         reader = csv.DictReader(f)
         for row in reader:
             c = int(row["conv_num"].strip())
+            idx = c - 1 if 1 <= c <= 4 else 0
             for i, col in enumerate(shape_cols):
                 if i < 8 and col in row:
-                    counts[c][i] = int(row[col].strip())
+                    counts[idx][i] = int(row[col].strip())
     return counts
 
 
@@ -477,14 +478,14 @@ def run_compare(generated_dir: Path, output_dir: Path) -> None:
     # LPT sequence
     lpt_seq = lpt_order(orders)
     order_to_conv_lpt = {
-        oid: (NUM_CONVEYORS - 1 - pos % NUM_CONVEYORS) for pos, oid in enumerate(lpt_seq)
+        oid: (NUM_CONVEYORS - (pos % NUM_CONVEYORS)) for pos, oid in enumerate(lpt_seq)
     }
     lpt_input = output_dir / "compare_lpt_input.csv"
     write_m3_input_by_order(orders, order_to_conv_lpt, lpt_seq, lpt_input)
 
     # Fixed order: 0, 1, 2, ..., n-1
     fixed_seq = list(range(n))
-    order_to_conv_fixed = {oid: pos % NUM_CONVEYORS for pos, oid in enumerate(fixed_seq)}
+    order_to_conv_fixed = {oid: (pos % NUM_CONVEYORS) + 1 for pos, oid in enumerate(fixed_seq)}
     fixed_input = output_dir / "compare_fixed_input.csv"
     write_m3_input_by_order(orders, order_to_conv_fixed, fixed_seq, fixed_input)
 
