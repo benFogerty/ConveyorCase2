@@ -6,7 +6,7 @@ Optimization goal: choose the optimal ORDER SEQUENCE (which order is 1st, 2nd, .
 and the optimal TOTE LOADING ORDER to minimize makespan. This module addresses
 the order-sequence part: it reads data generator output (order_itemtypes,
 order_quantities), sorts orders by total item count descending (LPT), assigns
-them to conveyors 0..3 in round-robin order, and writes an M3_Example input CSV.
+them to conveyors 1..4 in round-robin order, and writes an M3_Example input CSV.
 Tote loading order is currently implied by the order sequence (see README).
 """
 
@@ -167,7 +167,7 @@ def build_load_sequence(
     tote_loading_order: Optional[List[int]] = None,
 ) -> List[int]:
     """
-    Build the exact sequence of shapes (one per item) loaded onto conveyor 0.
+    Build the exact sequence of shapes (one per item) loaded onto conveyor 1.
     Tote contents (which items are in which tote) are fixed by data—we do NOT create totes.
     We only decide: (1) ORDER of totes (which tote to empty first, second, ...) and
     (2) ORDER of items within each tote (item_order_per_tote or else tote_contents order).
@@ -183,14 +183,14 @@ def build_load_sequence(
         order_pos = {oid: pos for pos, oid in enumerate(order_sequence)}
         order_to_conv = {}
         for pos, oid in enumerate(order_sequence):
-            order_to_conv[oid] = (NUM_CONVEYORS - 1 - pos % NUM_CONVEYORS) if travel_aware else (pos % NUM_CONVEYORS)
+            order_to_conv[oid] = (NUM_CONVEYORS - (pos % NUM_CONVEYORS)) if travel_aware else ((pos % NUM_CONVEYORS) + 1)  # 1..4
         tote_to_earliest_pos: Dict[int, int] = {}
         tote_to_max_conv: Dict[int, int] = {}
         for tote_id, items in tote_contents.items():
             positions = [order_pos.get(o, 999) for o, _, _ in items]
             tote_to_earliest_pos[tote_id] = min(positions)
-            convs = [order_to_conv.get(o, -1) for o, _, _ in items if order_to_conv.get(o, -1) >= 0]
-            tote_to_max_conv[tote_id] = max(convs) if convs else 0
+            convs = [order_to_conv.get(o, 0) for o, _, _ in items if 1 <= order_to_conv.get(o, 0) <= NUM_CONVEYORS]
+            tote_to_max_conv[tote_id] = max(convs) if convs else 1
         tote_order = sorted(
             tote_contents.keys(),
             key=lambda t: (tote_to_earliest_pos[t], -tote_to_max_conv[t], t),
@@ -213,12 +213,12 @@ def build_conveyor_input(
 ) -> List[List[int]]:
     """
     order_sequence = order (first in list = 1st order, etc.).
-    If travel_aware: position 0 -> conveyor 3, 1 -> 2, 2 -> 1, 3 -> 0 (farthest first).
-    If not: position 0 -> conv 0, 1 -> 1, 2 -> 2, 3 -> 3 (round-robin).
-    Returns shape counts per conveyor: counts[c][s] for conveyor c, shape s.
+    If travel_aware: position 0 -> conveyor 4, 1 -> 3, 2 -> 2, 3 -> 1 (farthest first).
+    If not: position 0 -> conv 1, 1 -> 2, 2 -> 3, 3 -> 4 (round-robin).
+    Returns shape counts per conveyor: counts[c-1][s] for conveyor c in 1..4, shape s.
     """
     o2c = {
-        oid: (NUM_CONVEYORS - 1 - pos % NUM_CONVEYORS) if travel_aware else (pos % NUM_CONVEYORS)
+        oid: (NUM_CONVEYORS - (pos % NUM_CONVEYORS)) if travel_aware else ((pos % NUM_CONVEYORS) + 1)
         for pos, oid in enumerate(order_sequence)
     }
     return build_conveyor_input_from_assignment(orders, o2c)
@@ -229,8 +229,8 @@ def build_conveyor_input_from_assignment(
     order_to_conveyor: Dict[int, int],
 ) -> List[List[int]]:
     """
-    Build shape counts per conveyor from explicit order_id -> conveyor assignment.
-    Returns counts[c][s] for conveyor c, shape s.
+    Build shape counts per conveyor from explicit order_id -> conveyor assignment (conveyors 1..4).
+    Returns counts[c-1][s] for conveyor c in 1..4, shape s.
     """
     order_to_pairs = {idx: pairs for idx, pairs in orders}
     counts: List[List[int]] = [[0] * NUM_SHAPES for _ in range(NUM_CONVEYORS)]
@@ -240,17 +240,17 @@ def build_conveyor_input_from_assignment(
             continue
         for shape_id, qty in pairs:
             if 0 <= shape_id < NUM_SHAPES:
-                counts[conv][shape_id] += qty
+                counts[conv - 1][shape_id] += qty
     return counts
 
 
 def write_m3_input(counts: List[List[int]], output_path: Path) -> None:
-    """Write M3_Example input CSV: conv_num and 8 shape columns (one row per conveyor)."""
+    """Write M3_Example input CSV: conv_num 1..4 and 8 shape columns (one row per conveyor)."""
     with output_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["conv_num", *SHAPE_COLUMNS])
-        for conv in range(NUM_CONVEYORS):
-            row = [conv] + [counts[conv][s] for s in range(NUM_SHAPES)]
+        for conv in range(1, NUM_CONVEYORS + 1):
+            row = [conv] + [counts[conv - 1][s] for s in range(NUM_SHAPES)]
             writer.writerow(row)
 
 
@@ -271,7 +271,7 @@ def write_m3_input_by_order(
             for shape_id, qty in pairs:
                 if 0 <= shape_id < NUM_SHAPES:
                     demand[shape_id] += qty
-            conv = order_to_conveyor.get(oid, 0)
+            conv = order_to_conveyor.get(oid, 1)
             writer.writerow([oid, conv] + demand)
 
 

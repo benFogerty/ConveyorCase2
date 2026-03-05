@@ -1,0 +1,50 @@
+TOTE LOADING ORDER AND ITEMS PER TOTE
+============================================================
+Tote contents (which items are in which tote) come from the data (orders_totes.csv).
+This file shows the chosen ORDER of totes (first tote emptied completely, then next, etc.)
+and the ORDER of items within each tote as loaded onto the conveyor.
+Each line is one (order, shape, qty) from the data; qty = number of physical units.
+So a tote can have more than 3 physical items (e.g. two lines with qty 3 and qty 2 = 5 units).
+Item IDs match the LOAD events in events_playbook.txt (item_id in that file).
+
+  1. Tote 8  (item_id 0-5):
+       order 8  shape 3 (triangle)  qty 1
+       order 10  shape 5 (moon)  qty 2
+       order 8  shape 1 (pentagon)  qty 3
+
+  2. Tote 3  (item_id 6-7):
+       order 6  shape 3 (triangle)  qty 2
+
+  3. Tote 6  (item_id 8-9):
+       order 2  shape 0 (cirle)  qty 2
+
+  4. Tote 15  (item_id 10-11):
+       order 4  shape 0 (cirle)  qty 1
+       order 2  shape 5 (moon)  qty 1
+
+  5. Tote 12  (item_id 12-13):
+       order 5  shape 3 (triangle)  qty 1
+       order 10  shape 6 (heart)  qty 1
+
+  6. Tote 14  (item_id 14-18):
+       order 1  shape 0 (cirle)  qty 2
+       order 1  shape 4 (star)  qty 2
+       order 2  shape 2 (trapezoid)  qty 1
+
+  7. Tote 10  (item_id 19-22):
+       order 3  shape 1 (pentagon)  qty 1
+       order 3  shape 6 (heart)  qty 1
+       order 7  shape 1 (pentagon)  qty 2
+
+  8. Tote 9  (item_id 23-23):
+       order 9  shape 2 (trapezoid)  qty 1
+
+  9. Tote 1  (item_id 24-25):
+       order 3  shape 4 (star)  qty 2
+
+  10. Tote 7  (item_id 26-32):
+       order 0  shape 4 (star)  qty 2
+       order 0  shape 3 (triangle)  qty 1
+       order 0  shape 5 (moon)  qty 2
+       order 9  shape 3 (triangle)  qty 2
+

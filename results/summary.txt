@@ -3,24 +3,24 @@ Method comparison (objective: last_order completion, seconds)
 
 Methods: Baseline, BaselineRR, GreedyMakespanInsertion, OrderToteHill, FullHillClimb, SimulatedAnnealing, GeneticAlgorithm, TabuSearch, IteratedLocalSearch, BeamSearch
 
-  Baseline: avg=142.64s
-  BaselineRR: avg=135.97s
-  GreedyMakespanInsertion: avg=148.19s
-  OrderToteHill: avg=128.61s
-  FullHillClimb: avg=128.61s
-  SimulatedAnnealing: avg=121.67s
-  GeneticAlgorithm: avg=120.42s
-  TabuSearch: avg=126.67s
-  IteratedLocalSearch: avg=128.61s
-  BeamSearch: avg=136.81s
+  Baseline: avg=134.75s
+  BaselineRR: avg=128.75s
+  GreedyMakespanInsertion: avg=140.50s
+  OrderToteHill: avg=121.75s
+  FullHillClimb: avg=121.75s
+  SimulatedAnnealing: avg=114.88s
+  GeneticAlgorithm: avg=113.25s
+  TabuSearch: avg=119.88s
+  IteratedLocalSearch: avg=121.50s
+  BeamSearch: avg=129.75s
 
-BaselineRR vs Baseline: 4.7% (avg; positive = RR better)
-GreedyMakespanInsertion vs Baseline: -3.9% improvement (avg)
-OrderToteHill vs Baseline: 9.8% improvement (avg)
-FullHillClimb vs Baseline: 9.8% improvement (avg)
+BaselineRR vs Baseline: 4.5% (avg; positive = RR better)
+GreedyMakespanInsertion vs Baseline: -4.3% improvement (avg)
+OrderToteHill vs Baseline: 9.6% improvement (avg)
+FullHillClimb vs Baseline: 9.6% improvement (avg)
 SimulatedAnnealing vs Baseline: 14.7% improvement (avg)
-GeneticAlgorithm vs Baseline: 15.6% improvement (avg)
-TabuSearch vs Baseline: 11.2% improvement (avg)
+GeneticAlgorithm vs Baseline: 16.0% improvement (avg)
+TabuSearch vs Baseline: 11.0% improvement (avg)
 IteratedLocalSearch vs Baseline: 9.8% improvement (avg)
 
 Per-instance results: see comparison.csv

@@ -5,7 +5,6 @@ All outputs go into a single results folder.
 """
 
 from __future__ import annotations
-from scheduler.beam_search import beam_search_order_sequence
 
 import argparse
 import csv
@@ -17,6 +16,8 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+
+from scheduler.beam_search import beam_search_order_sequence
 
 from conveyor_sim import SHAPE_COLUMNS, load_conveyors, simulate_greedy
 from scheduler.core import (
