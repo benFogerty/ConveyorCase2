@@ -3,7 +3,7 @@ EVENT PLAYBOOK (chronological)
 Instance: 2026-02-27_12-26-03
 Method: SimulatedAnnealing
 Last-order completion: 110.00s
-Total events (LOAD+HOP+PICK): 287
+Total events: 287  (LOAD: 45, PICK: 45, HOP: 197)
 LOAD item_id = index of that item in the load sequence; see tote_and_item_order.txt for which tote/item each id corresponds to.
 When an order receives its last pick, an ORDER COMPLETE line is shown (with completion time and conveyor).
 ============================================================

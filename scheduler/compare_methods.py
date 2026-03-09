@@ -67,6 +67,23 @@ METHODS = [
 ]
 
 
+def get_event_counts(
+    orders: list,
+    tote_contents: dict,
+    solution: Solution,
+) -> dict[str, int]:
+    """Return counts of LOAD, PICK, HOP events for the given solution. Keys: 'load', 'pick', 'hop'."""
+    _, _, trace = evaluate_solution(
+        solution, orders, tote_contents, objective="last_order", return_trace=True
+    )
+    if trace is None:
+        return {"load": 0, "pick": 0, "hop": 0}
+    load_count = sum(1 for _, ev, _ in trace if ev == "LOAD")
+    pick_count = sum(1 for _, ev, _ in trace if ev == "PICK")
+    hop_count = sum(1 for _, ev, _ in trace if ev == "HOP")
+    return {"load": load_count, "pick": pick_count, "hop": hop_count}
+
+
 def write_playbook_folder(
     orders: list,
     tote_contents: dict,
@@ -129,6 +146,11 @@ def write_playbook_folder(
                     order_complete_at_event[oid] = (t, i, conv)
                 break
 
+    # Count event types (LOAD, PICK, HOP) for playbook summary
+    load_count = sum(1 for _, ev, _ in trace_events if ev == "LOAD")
+    pick_count = sum(1 for _, ev, _ in trace_events if ev == "PICK")
+    hop_count = sum(1 for _, ev, _ in trace_events if ev == "HOP")
+
     shape_names = list(SHAPE_COLUMNS)
     with (folder / "events_playbook.txt").open("w", encoding="utf-8") as f:
         f.write("EVENT PLAYBOOK (chronological)\n")
@@ -136,7 +158,7 @@ def write_playbook_folder(
         f.write(f"Instance: {instance_id}\n")
         f.write(f"Method: {method_name}\n")
         f.write(f"Last-order completion: {last_order_value:.2f}s\n")
-        f.write(f"Total events (LOAD+HOP+PICK): {len(trace_events)}\n")
+        f.write(f"Total events: {len(trace_events)}  (LOAD: {load_count}, PICK: {pick_count}, HOP: {hop_count})\n")
         f.write("LOAD item_id = index of that item in the load sequence; see tote_and_item_order.txt for which tote/item each id corresponds to.\n")
         f.write("When an order receives its last pick, an ORDER COMPLETE line is shown (with completion time and conveyor).\n")
         f.write("=" * 60 + "\n\n")
@@ -283,8 +305,8 @@ def run_one_instance(
     polish: bool,
     polish_max_evals: int,
     verbose: bool,
-) -> dict[str, float]:
-    """Run all methods on one instance. Return dict method_name -> last_order value."""
+) -> tuple[dict[str, float], dict[str, dict[str, int]]]:
+    """Run all methods on one instance. Return (method_name -> last_order value, method_name -> {load, pick, hop} counts)."""
     orders = load_generator_data(generated_path)
     if not orders:
         raise ValueError("No orders")
@@ -294,17 +316,20 @@ def run_one_instance(
 
     n = len(orders)
     results: dict[str, float] = {}
+    solutions: dict[str, Solution] = {}
 
     # Baseline: order 0,1,2,..., travel-aware conveyor (pos 0→conv 3, 1→2, 2→1, 3→0), default tote/item
     baseline_sol = solution_from_order_sequence(
         orders, tote_contents, list(range(n)), travel_aware=True
     )
+    solutions["Baseline"] = baseline_sol
     results["Baseline"], _, _ = evaluate_solution(baseline_sol, orders, tote_contents, objective="last_order")
 
     # BaselineRR: same order 0,1,2,..., round-robin conveyor (pos 0→conv 0, 1→1, 2→2, 3→0), default tote/item
     baseline_rr_sol = solution_from_order_sequence(
         orders, tote_contents, list(range(n)), travel_aware=False
     )
+    solutions["BaselineRR"] = baseline_rr_sol
     results["BaselineRR"], _, _ = evaluate_solution(baseline_rr_sol, orders, tote_contents, objective="last_order")
 
     # MCT: greedy makespan insertion (order-only)
@@ -312,9 +337,10 @@ def run_one_instance(
         orders, travel_aware=True, tote_contents=tote_contents, order_to_totes=None,
     )
     results["GreedyMakespanInsertion"] = mct_ms
+    solutions["GreedyMakespanInsertion"] = solution_from_order_sequence(orders, tote_contents, seq, travel_aware=True)
 
     # ---- Beam Search ----
-    seq, beam_ms = beam_search_order_sequence(
+    seq_beam, beam_ms = beam_search_order_sequence(
         orders,
         beam_width=5,
         candidate_pool=12,
@@ -323,21 +349,23 @@ def run_one_instance(
         order_to_totes=None,
     )
     results["BeamSearch"] = beam_ms
-
+    solutions["BeamSearch"] = solution_from_order_sequence(orders, tote_contents, seq_beam, travel_aware=True)
 
     # OrderToteHill: hill climb over order sequence and tote loading order only (no conveyor, no item order)
     order_tote_start = initial_solution(orders, tote_contents, travel_aware=True)
-    _, results["OrderToteHill"], _ = hill_climb_order_and_tote(
+    ot_sol, results["OrderToteHill"], _ = hill_climb_order_and_tote(
         orders, tote_contents, order_tote_start,
         objective="last_order", max_evals=joint_max_evals, verbose=False,
     )
+    solutions["OrderToteHill"] = ot_sol
 
     # FullHillClimb: full hill climb from LPT — same neighborhoods, same budget
     lpt_full = initial_solution(orders, tote_contents, travel_aware=True)
-    _, results["FullHillClimb"], _ = hill_climb_full(
+    fh_sol, results["FullHillClimb"], _ = hill_climb_full(
         orders, tote_contents, lpt_full,
         objective="last_order", max_evals=joint_max_evals, verbose=False,
     )
+    solutions["FullHillClimb"] = fh_sol
 
     # SimulatedAnnealing: full SA (with optional restarts), then optional polish
     best_joint = None
@@ -362,18 +390,20 @@ def run_one_instance(
             objective="last_order", max_evals=polish_max_evals, verbose=False,
         )
     results["SimulatedAnnealing"] = best_val
+    solutions["SimulatedAnnealing"] = best_joint if best_joint is not None else solutions["Baseline"]
 
     # GeneticAlgorithm: OX crossover, mutation, selection by last_order
-    _, results["GeneticAlgorithm"], _ = genetic_algorithm(
+    ga_sol, results["GeneticAlgorithm"], _ = genetic_algorithm(
         orders, tote_contents,
         objective="last_order",
         max_evals=joint_max_evals,
         seed=seed,
         verbose=False,
     )
+    solutions["GeneticAlgorithm"] = ga_sol
 
     # TabuSearch: tabu list + aspiration, same neighborhoods as FullHillClimb
-    _, results["TabuSearch"], _ = tabu_search(
+    ts_sol, results["TabuSearch"], _ = tabu_search(
         orders, tote_contents,
         initial=None,
         objective="last_order",
@@ -381,9 +411,10 @@ def run_one_instance(
         seed=seed,
         verbose=False,
     )
+    solutions["TabuSearch"] = ts_sol
 
     # IteratedLocalSearch: perturb + hill climb, repeat
-    _, results["IteratedLocalSearch"], _ = iterated_local_search(
+    ils_sol, results["IteratedLocalSearch"], _ = iterated_local_search(
         orders, tote_contents,
         objective="last_order",
         max_evals=joint_max_evals,
@@ -391,8 +422,14 @@ def run_one_instance(
         seed=seed,
         verbose=False,
     )
+    solutions["IteratedLocalSearch"] = ils_sol
 
-    return results
+    # Event counts (LOAD, PICK, HOP) per method for this instance
+    event_counts: dict[str, dict[str, int]] = {}
+    for method in METHODS:
+        event_counts[method] = get_event_counts(orders, tote_contents, solutions[method])
+
+    return results, event_counts
 
 
 def main() -> None:
@@ -438,11 +475,12 @@ def main() -> None:
 
     instance_ids = [d.name for d in generated_dirs]
     rows: list[dict] = []
+    event_counts_rows: list[dict] = []
 
     for inst_id, gen_dir in zip(instance_ids, generated_dirs, strict=True):
         path = gen_dir / "generated"
         try:
-            res = run_one_instance(
+            res, event_counts = run_one_instance(
                 path,
                 seed=args.seed,
                 joint_max_evals=args.joint_max_evals,
@@ -456,6 +494,13 @@ def main() -> None:
             continue
         row = {"instance": inst_id, **res}
         rows.append(row)
+        # Flatten event counts for this instance: instance, Baseline_load, Baseline_pick, Baseline_hop, ...
+        ec_row: dict = {"instance": inst_id}
+        for m in METHODS:
+            ec_row[f"{m}_load"] = event_counts[m]["load"]
+            ec_row[f"{m}_pick"] = event_counts[m]["pick"]
+            ec_row[f"{m}_hop"] = event_counts[m]["hop"]
+        event_counts_rows.append(ec_row)
         if not args.quiet:
             print(f"  {inst_id}: " + " ".join(f"{m}={res[m]:.2f}" for m in METHODS))
 
@@ -510,6 +555,18 @@ def main() -> None:
         writer.writerows(rows)
     print(f"\nSaved {csv_path}")
 
+    # Average event counts (LOAD, PICK, HOP) per method
+    event_fieldnames = ["instance"] + [f"{m}_load" for m in METHODS] + [f"{m}_pick" for m in METHODS] + [f"{m}_hop" for m in METHODS]
+    avg_load = {m: sum(r[f"{m}_load"] for r in event_counts_rows) / N for m in METHODS}
+    avg_pick = {m: sum(r[f"{m}_pick"] for r in event_counts_rows) / N for m in METHODS}
+    avg_hop = {m: sum(r[f"{m}_hop"] for r in event_counts_rows) / N for m in METHODS}
+    events_csv_path = out_dir / "comparison_events.csv"
+    with events_csv_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=event_fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(event_counts_rows)
+    print(f"Saved {events_csv_path}")
+
     # Write summary text
     summary_path = out_dir / "summary.txt"
     with summary_path.open("w", encoding="utf-8") as f:
@@ -524,7 +581,11 @@ def main() -> None:
         for name in ["GreedyMakespanInsertion", "OrderToteHill", "FullHillClimb", "SimulatedAnnealing", "GeneticAlgorithm", "TabuSearch", "IteratedLocalSearch"]:
             avg = sum(r[name] for r in rows) / N
             f.write(f"{name} vs Baseline: {(1 - avg / baseline_avg) * 100:.1f}% improvement (avg)\n")
+        f.write("\nAverage playbook events per method (LOAD, PICK, HOP):\n")
+        for m in METHODS:
+            f.write(f"  {m}: LOAD={avg_load[m]:.1f}, PICK={avg_pick[m]:.1f}, HOP={avg_hop[m]:.1f}\n")
         f.write("\nPer-instance results: see comparison.csv\n")
+        f.write("Per-instance event counts: see comparison_events.csv\n")
     print(f"Saved {summary_path}")
 
     # Bar chart (average per method)
@@ -547,6 +608,31 @@ def main() -> None:
         plt.savefig(plot_path, dpi=150, bbox_inches="tight")
         plt.close()
         print(f"Saved {plot_path}")
+
+        # Line graph: selected methods across instances
+        line_methods = [
+            "Baseline",
+            "GreedyMakespanInsertion",
+            "FullHillClimb",
+            "SimulatedAnnealing",
+            "GeneticAlgorithm",
+        ]
+        line_colors = ["#95a5a6", "#3498db", "#2ecc71", "#e74c3c", "#9b59b6"]
+        fig2, ax2 = plt.subplots(figsize=(11, 5))
+        x = range(N)
+        for method, color in zip(line_methods, line_colors):
+            y = [r[method] for r in rows]
+            ax2.plot(x, y, marker="o", markersize=4, label=method, color=color, linewidth=1.5)
+        ax2.set_xlabel("Instance (index)")
+        ax2.set_ylabel("Last-order completion (s)")
+        ax2.set_title("Last-order completion by instance: Baseline, GreedyMakespanInsertion, FullHillClimb, SimulatedAnnealing, GeneticAlgorithm")
+        ax2.legend(loc="best", fontsize=9)
+        ax2.grid(True, alpha=0.3)
+        plt.tight_layout()
+        line_plot_path = out_dir / "comparison_line.png"
+        plt.savefig(line_plot_path, dpi=150, bbox_inches="tight")
+        plt.close()
+        print(f"Saved {line_plot_path}")
     else:
         print("Install matplotlib to generate comparison.png: pip install matplotlib")
 
