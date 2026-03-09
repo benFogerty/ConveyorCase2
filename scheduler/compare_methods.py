@@ -44,6 +44,7 @@ from scheduler.joint_solution import (
 from scheduler.search_orders import (
     greedy_makespan_insertion,
 )
+from bens_methods.mcts_solver import solve as mcts_solve, export_m3_input
 
 try:
     import matplotlib
@@ -57,6 +58,7 @@ METHODS = [
     "Baseline",
     "BaselineRR",
     "GreedyMakespanInsertion",
+    "MCTS",
     "OrderToteHill",
     "FullHillClimb",
     "SimulatedAnnealing",
@@ -93,7 +95,7 @@ def write_playbook_folder(
     last_order_value: float,
     out_dir: Path,
 ) -> None:
-    """Write a playbook folder under out_dir/method_name/instance_id/ with input.csv, events_playbook.txt, tote_and_item_order.txt."""
+    """Write a playbook folder under out_dir/method_name/instance_id/ with input.csv, input_conveyor.csv, events_playbook.txt, tote_and_item_order.txt."""
     folder = out_dir / method_name / instance_id
     folder.mkdir(parents=True, exist_ok=True)
 
@@ -101,6 +103,8 @@ def write_playbook_folder(
     write_m3_input_by_order(
         orders, solution.order_to_conveyor, solution.order_sequence, folder / "input.csv"
     )
+    # Per-conveyor example format (conv_num + shape columns)
+    export_m3_input(solution, orders, folder / "input_conveyor.csv", format="per_conveyor")
 
     load_seq = build_load_sequence(
         solution.order_sequence,
@@ -242,6 +246,17 @@ def get_solution_for_method(
             orders, tote_contents, seq, travel_aware=True
         )
         return sol, ms
+    if method == "MCTS":
+        def _eval(sol: Solution):
+            return evaluate_solution(sol, orders, tote_contents, objective="last_order")
+        sol, val = mcts_solve(
+            orders,
+            tote_contents,
+            evaluate=_eval,
+            n_iterations=joint_max_evals * 2,
+            seed=seed,
+        )
+        return sol, val
     if method == "OrderToteHill":
         start = initial_solution(orders, tote_contents, travel_aware=True)
         sol, val, _ = hill_climb_order_and_tote(
@@ -351,6 +366,17 @@ def run_one_instance(
     results["BeamSearch"] = beam_ms
     solutions["BeamSearch"] = solution_from_order_sequence(orders, tote_contents, seq_beam, travel_aware=True)
 
+    # MCTS: tote-sequence MCTS with deterministic decode
+    def _eval(sol: Solution):
+        return evaluate_solution(sol, orders, tote_contents, objective="last_order")
+    _, results["MCTS"] = mcts_solve(
+        orders,
+        tote_contents,
+        evaluate=_eval,
+        n_iterations=joint_max_evals * 2,
+        seed=seed,
+    )
+
     # OrderToteHill: hill climb over order sequence and tote loading order only (no conveyor, no item order)
     order_tote_start = initial_solution(orders, tote_contents, travel_aware=True)
     ot_sol, results["OrderToteHill"], _ = hill_climb_order_and_tote(
@@ -434,7 +460,7 @@ def run_one_instance(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Compare Baseline, BaselineRR, GreedyMakespanInsertion, OrderToteHill, FullHillClimb, SimulatedAnnealing, GeneticAlgorithm, TabuSearch, IteratedLocalSearch under last_order objective; write all outputs to results folder.",
+        description="Compare Baseline, BaselineRR, GreedyMakespanInsertion, MCTS, OrderToteHill, FullHillClimb, SimulatedAnnealing, GeneticAlgorithm, TabuSearch, IteratedLocalSearch under last_order objective; write all outputs to results folder.",
     )
     parser.add_argument(
         "base_dir",
@@ -538,7 +564,7 @@ def main() -> None:
         print(f"  {col}: avg={avg:.2f}s  best={best:.2f}s")
     baseline_avg = sum(r["Baseline"] for r in rows) / N
     print(f"  BaselineRR vs Baseline: {(1 - sum(r['BaselineRR'] for r in rows) / N / baseline_avg) * 100:.1f}% (avg; positive = RR better)")
-    for name in ["GreedyMakespanInsertion", "OrderToteHill", "FullHillClimb", "SimulatedAnnealing", "GeneticAlgorithm", "TabuSearch", "IteratedLocalSearch"]:
+    for name in ["GreedyMakespanInsertion", "MCTS", "OrderToteHill", "FullHillClimb", "SimulatedAnnealing", "GeneticAlgorithm", "TabuSearch", "IteratedLocalSearch"]:
         avg = sum(r[name] for r in rows) / N
         print(f"  {name} vs Baseline: {(1 - avg / baseline_avg) * 100:.1f}% improvement (avg)")
 
@@ -578,7 +604,7 @@ def main() -> None:
             f.write(f"  {col}: avg={avg:.2f}s\n")
         f.write("\n")
         f.write(f"BaselineRR vs Baseline: {(1 - sum(r['BaselineRR'] for r in rows) / N / baseline_avg) * 100:.1f}% (avg; positive = RR better)\n")
-        for name in ["GreedyMakespanInsertion", "OrderToteHill", "FullHillClimb", "SimulatedAnnealing", "GeneticAlgorithm", "TabuSearch", "IteratedLocalSearch"]:
+        for name in ["GreedyMakespanInsertion", "MCTS", "OrderToteHill", "FullHillClimb", "SimulatedAnnealing", "GeneticAlgorithm", "TabuSearch", "IteratedLocalSearch"]:
             avg = sum(r[name] for r in rows) / N
             f.write(f"{name} vs Baseline: {(1 - avg / baseline_avg) * 100:.1f}% improvement (avg)\n")
         f.write("\nAverage playbook events per method (LOAD, PICK, HOP):\n")
