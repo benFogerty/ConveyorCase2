@@ -3,7 +3,7 @@ EVENT PLAYBOOK (chronological)
 Instance: 2026-02-27_12-27-31
 Method: GeneticAlgorithm
 Last-order completion: 152.50s
-Total events (LOAD+HOP+PICK): 411
+Total events: 411  (LOAD: 62, PICK: 62, HOP: 287)
 LOAD item_id = index of that item in the load sequence; see tote_and_item_order.txt for which tote/item each id corresponds to.
 When an order receives its last pick, an ORDER COMPLETE line is shown (with completion time and conveyor).
 ============================================================

@@ -23,4 +23,17 @@ GeneticAlgorithm vs Baseline: 16.0% improvement (avg)
 TabuSearch vs Baseline: 11.0% improvement (avg)
 IteratedLocalSearch vs Baseline: 9.8% improvement (avg)
 
+Average playbook events per method (LOAD, PICK, HOP):
+  Baseline: LOAD=46.0, PICK=46.0, HOP=139.6
+  BaselineRR: LOAD=46.0, PICK=46.0, HOP=105.5
+  GreedyMakespanInsertion: LOAD=46.0, PICK=46.0, HOP=166.1
+  OrderToteHill: LOAD=46.0, PICK=46.0, HOP=162.1
+  FullHillClimb: LOAD=46.0, PICK=46.0, HOP=162.1
+  SimulatedAnnealing: LOAD=46.0, PICK=46.0, HOP=158.8
+  GeneticAlgorithm: LOAD=46.0, PICK=46.0, HOP=127.5
+  TabuSearch: LOAD=46.0, PICK=46.0, HOP=139.1
+  IteratedLocalSearch: LOAD=46.0, PICK=46.0, HOP=162.8
+  BeamSearch: LOAD=46.0, PICK=46.0, HOP=121.8
+
 Per-instance results: see comparison.csv
+Per-instance event counts: see comparison_events.csv
