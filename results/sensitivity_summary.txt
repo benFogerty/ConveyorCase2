@@ -3,9 +3,9 @@ SENSITIVITY ANALYSIS SUMMARY
 
 1) Demand Scaling
    Base makespan at 1.0x demand: 35.00
-   Makespan at lowest demand:    27.50
-   Makespan at highest demand:   50.00
-   Interpretation: Increasing demand to the highest tested level increased makespan by 42.9%.
+   Makespan at lowest demand:    35.00
+   Makespan at highest demand:   65.00
+   Interpretation: Increasing demand to the highest tested level increased makespan by 85.7%.
 
 2) Conveyor Speed
    Base makespan at 1.0x speed: 35.00

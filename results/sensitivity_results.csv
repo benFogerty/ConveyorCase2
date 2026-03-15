@@ -1,8 +1,8 @@
 analysis_type,method,input_source,demand_factor,speed_factor,makespan,avg_last_order,total_orders
-demand_scaling,Greedy,example_files/MSE433_M3_Example_input.csv,0.8,1.0,27.5,25.0,4
 demand_scaling,Greedy,example_files/MSE433_M3_Example_input.csv,1.0,1.0,35.0,30.0,4
-demand_scaling,Greedy,example_files/MSE433_M3_Example_input.csv,1.2,1.0,42.5,35.0,4
+demand_scaling,Greedy,example_files/MSE433_M3_Example_input.csv,1.25,1.0,42.5,35.0,4
 demand_scaling,Greedy,example_files/MSE433_M3_Example_input.csv,1.5,1.0,50.0,40.0,4
+demand_scaling,Greedy,example_files/MSE433_M3_Example_input.csv,1.75,1.0,65.0,50.0,4
 conveyor_speed,Greedy,example_files/MSE433_M3_Example_input.csv,1.0,0.8,43.75,35.625,4
 conveyor_speed,Greedy,example_files/MSE433_M3_Example_input.csv,1.0,1.0,35.0,30.0,4
 conveyor_speed,Greedy,example_files/MSE433_M3_Example_input.csv,1.0,1.2,30.0,26.25,4

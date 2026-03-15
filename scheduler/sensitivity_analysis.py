@@ -58,7 +58,7 @@ DEFAULT_METHODS = [
     "IteratedLocalSearch",
 ]
 
-DEMAND_FACTORS = [0.8, 1.0, 1.2, 1.5]
+DEMAND_FACTORS = [1.0, 1.25, 1.5, 1.75]
 SPEED_FACTORS = [0.8, 1.0, 1.2]
 
 DEFAULT_SEED = 42
