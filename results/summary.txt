@@ -1,11 +1,12 @@
 Method comparison (objective: last_order completion, seconds)
 ============================================================
 
-Methods: Baseline, BaselineRR, GreedyMakespanInsertion, OrderToteHill, FullHillClimb, SimulatedAnnealing, GeneticAlgorithm, TabuSearch, IteratedLocalSearch, BeamSearch
+Methods: Baseline, BaselineRR, GreedyMakespanInsertion, BranchAndBound, OrderToteHill, FullHillClimb, SimulatedAnnealing, GeneticAlgorithm, TabuSearch, IteratedLocalSearch, BeamSearch
 
   Baseline: avg=134.75s
   BaselineRR: avg=128.75s
   GreedyMakespanInsertion: avg=140.50s
+  BranchAndBound: avg=119.75s
   OrderToteHill: avg=121.75s
   FullHillClimb: avg=121.75s
   SimulatedAnnealing: avg=114.88s
@@ -16,6 +17,7 @@ Methods: Baseline, BaselineRR, GreedyMakespanInsertion, OrderToteHill, FullHillC
 
 BaselineRR vs Baseline: 4.5% (avg; positive = RR better)
 GreedyMakespanInsertion vs Baseline: -4.3% improvement (avg)
+BranchAndBound vs Baseline: 11.1% improvement (avg)
 OrderToteHill vs Baseline: 9.6% improvement (avg)
 FullHillClimb vs Baseline: 9.6% improvement (avg)
 SimulatedAnnealing vs Baseline: 14.7% improvement (avg)
@@ -27,6 +29,7 @@ Average playbook events per method (LOAD, PICK, HOP):
   Baseline: LOAD=46.0, PICK=46.0, HOP=139.6
   BaselineRR: LOAD=46.0, PICK=46.0, HOP=105.5
   GreedyMakespanInsertion: LOAD=46.0, PICK=46.0, HOP=166.1
+  BranchAndBound: LOAD=46.0, PICK=46.0, HOP=145.9
   OrderToteHill: LOAD=46.0, PICK=46.0, HOP=162.1
   FullHillClimb: LOAD=46.0, PICK=46.0, HOP=162.1
   SimulatedAnnealing: LOAD=46.0, PICK=46.0, HOP=158.8

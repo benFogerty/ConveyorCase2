@@ -236,7 +236,7 @@ def build_conveyor_input_from_assignment(
     counts: List[List[int]] = [[0] * NUM_SHAPES for _ in range(NUM_CONVEYORS)]
     for oid, pairs in order_to_pairs.items():
         conv = order_to_conveyor.get(oid, 0)
-        if conv < 0 or conv >= NUM_CONVEYORS:
+        if conv < 1 or conv > NUM_CONVEYORS:
             continue
         for shape_id, qty in pairs:
             if 0 <= shape_id < NUM_SHAPES:

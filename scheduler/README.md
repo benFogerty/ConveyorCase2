@@ -78,7 +78,7 @@ python scheduler/search_orders.py path/to/generated/ --method sa --max-evals 500
 Output: best makespan, best order sequence, and optionally `scheduler/search_best_input.csv`.
 
 **Method comparison (same objective: last_order):**  
-Run Baseline, BaselineRR, GreedyMakespanInsertion, MCTS, OrderToteHill, FullHillClimb, SimulatedAnnealing, GeneticAlgorithm, TabuSearch, and IteratedLocalSearch on every instance; all evaluated with **last_order completion**. All outputs go into the **results/** folder.
+Run Baseline, BaselineRR, GreedyMakespanInsertion, BranchAndBound, OrderToteHill, FullHillClimb, SimulatedAnnealing, GeneticAlgorithm, TabuSearch, and IteratedLocalSearch on every instance; all evaluated with **last_order completion**. All outputs go into the **results/** folder.
 
 ```bash
 python scheduler/compare_methods.py data_generator --out-dir results
@@ -149,7 +149,7 @@ python scheduler/visualize.py --flow path/to/generated/ scheduler/simulated_outp
 # Order-sequence search (hill or SA)
 python scheduler/search_orders.py path/to/generated/ --method hill --save-best
 
-# Method comparison (Baseline, BaselineRR, GreedyMakespanInsertion, MCTS, OrderToteHill, FullHillClimb, SimulatedAnnealing, GeneticAlgorithm, TabuSearch, IteratedLocalSearch) – all outputs in results/
+# Method comparison (Baseline, BaselineRR, GreedyMakespanInsertion, BranchAndBound, OrderToteHill, FullHillClimb, SimulatedAnnealing, GeneticAlgorithm, TabuSearch, IteratedLocalSearch) – all outputs in results/
 python scheduler/compare_methods.py data_generator --out-dir results
 
 # Joint optimization (order + conveyor + tote + item order)

@@ -19,7 +19,7 @@ problem has four decision dimensions: (1) order sequence, (2) conveyor per order
                         order that minimizes makespan (last_order completion).
                         Travel-aware conveyor assignment; default tote/item order.
 
-  MCTS                  Monte Carlo Tree Search over tote loading order. Uses
+  BranchAndBound        Branch-and-bound over tote loading order. Uses
                         deterministic decoding for order sequence (LPT),
                         travel-aware conveyor assignment, and item order within
                         each tote.

@@ -44,7 +44,7 @@ from scheduler.joint_solution import (
 from scheduler.search_orders import (
     greedy_makespan_insertion,
 )
-from bens_methods.mcts_solver import solve as mcts_solve, export_m3_input
+from scheduler.branch_and_bound import solve as branch_and_bound_solve, export_m3_input
 
 try:
     import matplotlib
@@ -58,7 +58,7 @@ METHODS = [
     "Baseline",
     "BaselineRR",
     "GreedyMakespanInsertion",
-    "MCTS",
+    "BranchAndBound",
     "OrderToteHill",
     "FullHillClimb",
     "SimulatedAnnealing",
@@ -246,10 +246,10 @@ def get_solution_for_method(
             orders, tote_contents, seq, travel_aware=True
         )
         return sol, ms
-    if method == "MCTS":
+    if method == "BranchAndBound":
         def _eval(sol: Solution):
             return evaluate_solution(sol, orders, tote_contents, objective="last_order")
-        sol, val = mcts_solve(
+        sol, val = branch_and_bound_solve(
             orders,
             tote_contents,
             evaluate=_eval,
@@ -366,16 +366,17 @@ def run_one_instance(
     results["BeamSearch"] = beam_ms
     solutions["BeamSearch"] = solution_from_order_sequence(orders, tote_contents, seq_beam, travel_aware=True)
 
-    # MCTS: tote-sequence MCTS with deterministic decode
+    # BranchAndBound: tote-sequence branch-and-bound with deterministic decode
     def _eval(sol: Solution):
         return evaluate_solution(sol, orders, tote_contents, objective="last_order")
-    _, results["MCTS"] = mcts_solve(
+    bnb_sol, results["BranchAndBound"] = branch_and_bound_solve(
         orders,
         tote_contents,
         evaluate=_eval,
         n_iterations=joint_max_evals * 2,
         seed=seed,
     )
+    solutions["BranchAndBound"] = bnb_sol
 
     # OrderToteHill: hill climb over order sequence and tote loading order only (no conveyor, no item order)
     order_tote_start = initial_solution(orders, tote_contents, travel_aware=True)
@@ -460,7 +461,7 @@ def run_one_instance(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Compare Baseline, BaselineRR, GreedyMakespanInsertion, MCTS, OrderToteHill, FullHillClimb, SimulatedAnnealing, GeneticAlgorithm, TabuSearch, IteratedLocalSearch under last_order objective; write all outputs to results folder.",
+        description="Compare Baseline, BaselineRR, GreedyMakespanInsertion, BranchAndBound, OrderToteHill, FullHillClimb, SimulatedAnnealing, GeneticAlgorithm, TabuSearch, IteratedLocalSearch under last_order objective; write all outputs to results folder.",
     )
     parser.add_argument(
         "base_dir",
@@ -564,7 +565,7 @@ def main() -> None:
         print(f"  {col}: avg={avg:.2f}s  best={best:.2f}s")
     baseline_avg = sum(r["Baseline"] for r in rows) / N
     print(f"  BaselineRR vs Baseline: {(1 - sum(r['BaselineRR'] for r in rows) / N / baseline_avg) * 100:.1f}% (avg; positive = RR better)")
-    for name in ["GreedyMakespanInsertion", "MCTS", "OrderToteHill", "FullHillClimb", "SimulatedAnnealing", "GeneticAlgorithm", "TabuSearch", "IteratedLocalSearch"]:
+    for name in ["GreedyMakespanInsertion", "BranchAndBound", "OrderToteHill", "FullHillClimb", "SimulatedAnnealing", "GeneticAlgorithm", "TabuSearch", "IteratedLocalSearch"]:
         avg = sum(r[name] for r in rows) / N
         print(f"  {name} vs Baseline: {(1 - avg / baseline_avg) * 100:.1f}% improvement (avg)")
 
@@ -604,7 +605,7 @@ def main() -> None:
             f.write(f"  {col}: avg={avg:.2f}s\n")
         f.write("\n")
         f.write(f"BaselineRR vs Baseline: {(1 - sum(r['BaselineRR'] for r in rows) / N / baseline_avg) * 100:.1f}% (avg; positive = RR better)\n")
-        for name in ["GreedyMakespanInsertion", "MCTS", "OrderToteHill", "FullHillClimb", "SimulatedAnnealing", "GeneticAlgorithm", "TabuSearch", "IteratedLocalSearch"]:
+        for name in ["GreedyMakespanInsertion", "BranchAndBound", "OrderToteHill", "FullHillClimb", "SimulatedAnnealing", "GeneticAlgorithm", "TabuSearch", "IteratedLocalSearch"]:
             avg = sum(r[name] for r in rows) / N
             f.write(f"{name} vs Baseline: {(1 - avg / baseline_avg) * 100:.1f}% improvement (avg)\n")
         f.write("\nAverage playbook events per method (LOAD, PICK, HOP):\n")
@@ -620,7 +621,8 @@ def main() -> None:
         avgs = [sum(r[m] for r in rows) / N for m in METHODS]
         colors = [
             "#95a5a6", "#3498db", "#1abc9c", "#2ecc71", "#e67e22",
-            "#e74c3c", "#9b59b6", "#f39c12", "#34495e",
+            "#e74c3c", "#9b59b6", "#f39c12", "#34495e", "#16a085",
+            "#7f8c8d",
         ]
         bars = ax.bar(range(len(METHODS)), avgs, color=colors[: len(METHODS)], edgecolor="black")
         ax.set_xticks(range(len(METHODS)))
