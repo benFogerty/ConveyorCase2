@@ -44,7 +44,11 @@ from scheduler.joint_solution import (
 from scheduler.search_orders import (
     greedy_makespan_insertion,
 )
-from scheduler.branch_and_bound import solve as branch_and_bound_solve, export_m3_input
+from scheduler.branch_and_bound import (
+    BranchAndBoundConfig,
+    solve as branch_and_bound_solve,
+    export_m3_input,
+)
 
 try:
     import matplotlib
@@ -54,11 +58,10 @@ except ImportError:
     plt = None
 
 
-METHODS = [
+DEFAULT_METHODS = [
     "Baseline",
     "BaselineRR",
     "GreedyMakespanInsertion",
-    "BranchAndBound",
     "OrderToteHill",
     "FullHillClimb",
     "SimulatedAnnealing",
@@ -67,6 +70,12 @@ METHODS = [
     "IteratedLocalSearch",
     "BeamSearch",
 ]
+
+OPTIONAL_METHODS = [
+    "BranchAndBound",
+]
+
+ALL_METHODS = DEFAULT_METHODS + OPTIONAL_METHODS
 
 
 def get_event_counts(
@@ -214,6 +223,13 @@ def write_playbook_folder(
             f.write(f"  [Warning: total items {item_id} != load sequence length {len(load_seq)}]\n")
 
 
+def active_methods(include_branch_and_bound: bool) -> list[str]:
+    methods = list(DEFAULT_METHODS)
+    if include_branch_and_bound:
+        methods.extend(OPTIONAL_METHODS)
+    return methods
+
+
 def get_solution_for_method(
     orders: list,
     tote_contents: dict,
@@ -223,6 +239,7 @@ def get_solution_for_method(
     joint_restarts: int,
     polish: bool,
     polish_max_evals: int,
+    verbose: bool = False,
 ) -> tuple[Solution, float]:
     """Run the given method and return (solution, last_order value)."""
     n = len(orders)
@@ -255,6 +272,7 @@ def get_solution_for_method(
             evaluate=_eval,
             n_iterations=joint_max_evals * 2,
             seed=seed,
+            config=BranchAndBoundConfig(log_improvements=verbose),
         )
         return sol, val
     if method == "OrderToteHill":
@@ -314,6 +332,7 @@ def get_solution_for_method(
 
 def run_one_instance(
     generated_path: Path,
+    methods: list[str],
     seed: int | None,
     joint_max_evals: int,
     joint_restarts: int,
@@ -366,17 +385,19 @@ def run_one_instance(
     results["BeamSearch"] = beam_ms
     solutions["BeamSearch"] = solution_from_order_sequence(orders, tote_contents, seq_beam, travel_aware=True)
 
-    # BranchAndBound: tote-sequence branch-and-bound with deterministic decode
-    def _eval(sol: Solution):
-        return evaluate_solution(sol, orders, tote_contents, objective="last_order")
-    bnb_sol, results["BranchAndBound"] = branch_and_bound_solve(
-        orders,
-        tote_contents,
-        evaluate=_eval,
-        n_iterations=joint_max_evals * 2,
-        seed=seed,
-    )
-    solutions["BranchAndBound"] = bnb_sol
+    if "BranchAndBound" in methods:
+        # BranchAndBound: tote-sequence branch-and-bound with deterministic decode
+        def _eval(sol: Solution):
+            return evaluate_solution(sol, orders, tote_contents, objective="last_order")
+        bnb_sol, results["BranchAndBound"] = branch_and_bound_solve(
+            orders,
+            tote_contents,
+            evaluate=_eval,
+            n_iterations=joint_max_evals * 2,
+            seed=seed,
+            config=BranchAndBoundConfig(log_improvements=verbose),
+        )
+        solutions["BranchAndBound"] = bnb_sol
 
     # OrderToteHill: hill climb over order sequence and tote loading order only (no conveyor, no item order)
     order_tote_start = initial_solution(orders, tote_contents, travel_aware=True)
@@ -453,7 +474,7 @@ def run_one_instance(
 
     # Event counts (LOAD, PICK, HOP) per method for this instance
     event_counts: dict[str, dict[str, int]] = {}
-    for method in METHODS:
+    for method in methods:
         event_counts[method] = get_event_counts(orders, tote_contents, solutions[method])
 
     return results, event_counts
@@ -461,7 +482,7 @@ def run_one_instance(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Compare Baseline, BaselineRR, GreedyMakespanInsertion, BranchAndBound, OrderToteHill, FullHillClimb, SimulatedAnnealing, GeneticAlgorithm, TabuSearch, IteratedLocalSearch under last_order objective; write all outputs to results folder.",
+        description="Compare the default method set under the last_order objective and write all outputs to the results folder. BranchAndBound is opt-in via --include-branch-and-bound because it is slow.",
     )
     parser.add_argument(
         "base_dir",
@@ -476,13 +497,18 @@ def main() -> None:
         default=Path("results"),
         help="Output folder for comparison CSV, summary, and plot (default: results)",
     )
+    parser.add_argument(
+        "--include-branch-and-bound",
+        action="store_true",
+        help="Include BranchAndBound in the comparison run (excluded by default because it is slow)",
+    )
     parser.add_argument("--joint-max-evals", type=int, default=800, help="Max evals for SimulatedAnnealing per instance (default 800)")
     parser.add_argument("--joint-restarts", type=int, default=2, help="Run SimulatedAnnealing this many times (different seeds), take best (default 2)")
     parser.add_argument("--polish", action="store_true", help="After SA, run hill climb on order/tote/conveyor to polish")
     parser.add_argument("--polish-max-evals", type=int, default=300, help="Max evals for polish hill climb (default 300)")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for SimulatedAnnealing (restarts use seed, seed+1, ...)")
     parser.add_argument("--save-playbook", action="store_true", help="For each instance, write a playbook folder under out_dir/<instance_id>/ (input.csv, events_playbook.txt, tote_and_item_order.txt)")
-    parser.add_argument("--playbook-method", type=str, default=None, choices=METHODS, help="Method to use for playbook (default: best for that instance)")
+    parser.add_argument("--playbook-method", type=str, default=None, choices=ALL_METHODS, help="Method to use for playbook (default: best active method for that instance)")
     parser.add_argument("-q", "--quiet", action="store_true", help="Less per-instance output")
     args = parser.parse_args()
 
@@ -500,6 +526,11 @@ def main() -> None:
     if not generated_dirs:
         raise SystemExit(f"No generated folders under {base_dir}")
 
+    methods = active_methods(args.include_branch_and_bound)
+
+    if args.playbook_method == "BranchAndBound" and "BranchAndBound" not in methods:
+        raise SystemExit("BranchAndBound playbooks require --include-branch-and-bound")
+
     instance_ids = [d.name for d in generated_dirs]
     rows: list[dict] = []
     event_counts_rows: list[dict] = []
@@ -509,6 +540,7 @@ def main() -> None:
         try:
             res, event_counts = run_one_instance(
                 path,
+                methods=methods,
                 seed=args.seed,
                 joint_max_evals=args.joint_max_evals,
                 joint_restarts=args.joint_restarts,
@@ -523,17 +555,17 @@ def main() -> None:
         rows.append(row)
         # Flatten event counts for this instance: instance, Baseline_load, Baseline_pick, Baseline_hop, ...
         ec_row: dict = {"instance": inst_id}
-        for m in METHODS:
+        for m in methods:
             ec_row[f"{m}_load"] = event_counts[m]["load"]
             ec_row[f"{m}_pick"] = event_counts[m]["pick"]
             ec_row[f"{m}_hop"] = event_counts[m]["hop"]
         event_counts_rows.append(ec_row)
         if not args.quiet:
-            print(f"  {inst_id}: " + " ".join(f"{m}={res[m]:.2f}" for m in METHODS))
+            print(f"  {inst_id}: " + " ".join(f"{m}={res[m]:.2f}" for m in methods))
 
         if getattr(args, "save_playbook", False):
             try:
-                playbook_method = args.playbook_method or min(METHODS, key=lambda m: res[m])
+                playbook_method = args.playbook_method or min(methods, key=lambda m: res[m])
                 orders = load_generator_data(path)
                 tote_contents, _ = load_tote_data(path, orders)
                 if orders and tote_contents:
@@ -544,6 +576,7 @@ def main() -> None:
                         joint_restarts=args.joint_restarts,
                         polish=args.polish,
                         polish_max_evals=args.polish_max_evals,
+                        verbose=not args.quiet,
                     )
                     write_playbook_folder(
                         orders, tote_contents, sol, playbook_method, inst_id, val, out_dir,
@@ -559,34 +592,36 @@ def main() -> None:
     # Summary
     N = len(rows)
     print("\n--- Summary (objective: last_order, lower is better) ---")
-    for col in METHODS:
+    for col in methods:
         avg = sum(r[col] for r in rows) / N
         best = min(r[col] for r in rows)
         print(f"  {col}: avg={avg:.2f}s  best={best:.2f}s")
     baseline_avg = sum(r["Baseline"] for r in rows) / N
     print(f"  BaselineRR vs Baseline: {(1 - sum(r['BaselineRR'] for r in rows) / N / baseline_avg) * 100:.1f}% (avg; positive = RR better)")
-    for name in ["GreedyMakespanInsertion", "BranchAndBound", "OrderToteHill", "FullHillClimb", "SimulatedAnnealing", "GeneticAlgorithm", "TabuSearch", "IteratedLocalSearch"]:
+    for name in methods:
+        if name in {"Baseline", "BaselineRR"}:
+            continue
         avg = sum(r[name] for r in rows) / N
         print(f"  {name} vs Baseline: {(1 - avg / baseline_avg) * 100:.1f}% improvement (avg)")
 
     # Wins
-    for col in METHODS:
-        wins = sum(1 for r in rows if r[col] == min(r[m] for m in METHODS))
+    for col in methods:
+        wins = sum(1 for r in rows if r[col] == min(r[m] for m in methods))
         print(f"  {col} wins: {wins}/{N}")
 
     # Write comparison CSV
     csv_path = out_dir / "comparison.csv"
     with csv_path.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["instance"] + METHODS, extrasaction="ignore")
+        writer = csv.DictWriter(f, fieldnames=["instance"] + methods, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(rows)
     print(f"\nSaved {csv_path}")
 
     # Average event counts (LOAD, PICK, HOP) per method
-    event_fieldnames = ["instance"] + [f"{m}_load" for m in METHODS] + [f"{m}_pick" for m in METHODS] + [f"{m}_hop" for m in METHODS]
-    avg_load = {m: sum(r[f"{m}_load"] for r in event_counts_rows) / N for m in METHODS}
-    avg_pick = {m: sum(r[f"{m}_pick"] for r in event_counts_rows) / N for m in METHODS}
-    avg_hop = {m: sum(r[f"{m}_hop"] for r in event_counts_rows) / N for m in METHODS}
+    event_fieldnames = ["instance"] + [f"{m}_load" for m in methods] + [f"{m}_pick" for m in methods] + [f"{m}_hop" for m in methods]
+    avg_load = {m: sum(r[f"{m}_load"] for r in event_counts_rows) / N for m in methods}
+    avg_pick = {m: sum(r[f"{m}_pick"] for r in event_counts_rows) / N for m in methods}
+    avg_hop = {m: sum(r[f"{m}_hop"] for r in event_counts_rows) / N for m in methods}
     events_csv_path = out_dir / "comparison_events.csv"
     with events_csv_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=event_fieldnames, extrasaction="ignore")
@@ -599,17 +634,19 @@ def main() -> None:
     with summary_path.open("w", encoding="utf-8") as f:
         f.write("Method comparison (objective: last_order completion, seconds)\n")
         f.write("=" * 60 + "\n\n")
-        f.write("Methods: " + ", ".join(METHODS) + "\n\n")
-        for col in METHODS:
+        f.write("Methods: " + ", ".join(methods) + "\n\n")
+        for col in methods:
             avg = sum(r[col] for r in rows) / N
             f.write(f"  {col}: avg={avg:.2f}s\n")
         f.write("\n")
         f.write(f"BaselineRR vs Baseline: {(1 - sum(r['BaselineRR'] for r in rows) / N / baseline_avg) * 100:.1f}% (avg; positive = RR better)\n")
-        for name in ["GreedyMakespanInsertion", "BranchAndBound", "OrderToteHill", "FullHillClimb", "SimulatedAnnealing", "GeneticAlgorithm", "TabuSearch", "IteratedLocalSearch"]:
+        for name in methods:
+            if name in {"Baseline", "BaselineRR"}:
+                continue
             avg = sum(r[name] for r in rows) / N
             f.write(f"{name} vs Baseline: {(1 - avg / baseline_avg) * 100:.1f}% improvement (avg)\n")
         f.write("\nAverage playbook events per method (LOAD, PICK, HOP):\n")
-        for m in METHODS:
+        for m in methods:
             f.write(f"  {m}: LOAD={avg_load[m]:.1f}, PICK={avg_pick[m]:.1f}, HOP={avg_hop[m]:.1f}\n")
         f.write("\nPer-instance results: see comparison.csv\n")
         f.write("Per-instance event counts: see comparison_events.csv\n")
@@ -618,15 +655,15 @@ def main() -> None:
     # Bar chart (average per method)
     if plt is not None:
         fig, ax = plt.subplots(figsize=(11, 5))
-        avgs = [sum(r[m] for r in rows) / N for m in METHODS]
+        avgs = [sum(r[m] for r in rows) / N for m in methods]
         colors = [
             "#95a5a6", "#3498db", "#1abc9c", "#2ecc71", "#e67e22",
             "#e74c3c", "#9b59b6", "#f39c12", "#34495e", "#16a085",
             "#7f8c8d",
         ]
-        bars = ax.bar(range(len(METHODS)), avgs, color=colors[: len(METHODS)], edgecolor="black")
-        ax.set_xticks(range(len(METHODS)))
-        ax.set_xticklabels(METHODS, rotation=45, ha="right")
+        bars = ax.bar(range(len(methods)), avgs, color=colors[: len(methods)], edgecolor="black")
+        ax.set_xticks(range(len(methods)))
+        ax.set_xticklabels(methods, rotation=45, ha="right")
         ax.set_ylabel("Avg last_order (s)")
         ax.set_title("Method comparison (same objective: last_order completion)")
         for b, v in zip(bars, avgs):

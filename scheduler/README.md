@@ -78,12 +78,16 @@ python scheduler/search_orders.py path/to/generated/ --method sa --max-evals 500
 Output: best makespan, best order sequence, and optionally `scheduler/search_best_input.csv`.
 
 **Method comparison (same objective: last_order):**  
-Run Baseline, BaselineRR, GreedyMakespanInsertion, BranchAndBound, OrderToteHill, FullHillClimb, SimulatedAnnealing, GeneticAlgorithm, TabuSearch, and IteratedLocalSearch on every instance; all evaluated with **last_order completion**. All outputs go into the **results/** folder.
+Run Baseline, BaselineRR, GreedyMakespanInsertion, OrderToteHill, FullHillClimb, SimulatedAnnealing, GeneticAlgorithm, TabuSearch, IteratedLocalSearch, and BeamSearch on every instance; all evaluated with **last_order completion**. All outputs go into the **results/** folder.
+
+`BranchAndBound` is excluded by default because it is much slower than the other methods.
 
 ```bash
 python scheduler/compare_methods.py data_generator --out-dir results
 # Better SimulatedAnnealing (e.g. 92.5s): add --joint-restarts 2 --polish
 python scheduler/compare_methods.py data_generator --out-dir results --joint-restarts 2 --polish
+# Include BranchAndBound only when you explicitly want it
+python scheduler/compare_methods.py data_generator --out-dir results --include-branch-and-bound
 ```
 
 Defaults: 800 evals per joint method, 2 restarts for SA (take best), optional `--polish` (hill climb after SA). Outputs in `results/`: `comparison.csv`, `summary.txt`, `comparison.png`. If you use `--save-playbook`, each playbook folder includes `input_conveyor.csv` in the M3 example format.
@@ -149,7 +153,7 @@ python scheduler/visualize.py --flow path/to/generated/ scheduler/simulated_outp
 # Order-sequence search (hill or SA)
 python scheduler/search_orders.py path/to/generated/ --method hill --save-best
 
-# Method comparison (Baseline, BaselineRR, GreedyMakespanInsertion, BranchAndBound, OrderToteHill, FullHillClimb, SimulatedAnnealing, GeneticAlgorithm, TabuSearch, IteratedLocalSearch) – all outputs in results/
+# Method comparison (default set excludes BranchAndBound because it is slow)
 python scheduler/compare_methods.py data_generator --out-dir results
 
 # Joint optimization (order + conveyor + tote + item order)

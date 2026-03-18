@@ -56,12 +56,20 @@ python scheduler/core.py path/to/generated/ output_input.csv
 python3 conveyor_sim.py output_input.csv output_events.csv --all-load-at-conveyor-0
 ```
 
-### 4. Compare all methods (recommended)
+### 4. Compare methods (recommended)
 
-Runs all methods on every **non-sample** instance under `data_generator/` (folders whose names contain "sample" are skipped). Outputs go to `results/`.
+Runs the default comparison set on every generated instance under `data_generator/`. Outputs go to `results/`.
+
+`BranchAndBound` is excluded by default because it takes much longer than the other methods.
 
 ```bash
 python scheduler/compare_methods.py data_generator --out-dir results
+```
+
+If you want to include `BranchAndBound` anyway:
+
+```bash
+python scheduler/compare_methods.py data_generator --out-dir results --include-branch-and-bound
 ```
 
 Optional: better SimulatedAnnealing with restarts and hill-climb polish:
